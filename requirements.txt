@@ -1,0 +1,2 @@
+pwncat-cs==0.5.4
+requests==2.27.1
