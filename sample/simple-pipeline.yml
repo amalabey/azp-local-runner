@@ -1,0 +1,25 @@
+trigger:
+- master
+
+pr: none
+
+pool:
+  name: Default
+
+variables:
+  buildConfiguration: 'Release'
+
+stages:
+  - stage: 'Build'
+    jobs:
+      - job: 'build'
+        steps:
+          - script: echo "Starting"
+          - task: DotNetCoreCLI@2
+            displayName: 'install ef tool'
+            inputs:
+              command: 'custom'
+              custom: 'tool'
+              arguments: 'install --global dotnet-ef'
+          - script: echo "Finished"
+          
