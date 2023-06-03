@@ -7,8 +7,6 @@ import json
 import logging
 import http.client
 
-logging.basicConfig(level=logging.DEBUG)
-
 httpclient_logger = logging.getLogger("http.client")
 AGENT_IMAGE_NAME="dockeragent:latest"
 
@@ -65,6 +63,7 @@ parser.add_argument('-p', '--project', type=str, help='Azure DevOps project name
 parser.add_argument('-t', '--token', type=str, help='Personal Access Token to access Azure DevOps')
 parser.add_argument('-f', '--file', type=str, help='Azure Pipeline Yaml file')
 parser.add_argument('-i', '--id', type=str, help='Pipeline Id from Azure Pipelines (can be found in the url)')
+parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 
 # Parse the command-line arguments
 args = parser.parse_args()
@@ -76,5 +75,8 @@ project_name = args.project
 file_path = args.file
 pipeline_id = args.id
 
-httpclient_logging_patch()
+if args.verbose:
+    logging.basicConfig(level=logging.DEBUG)
+    httpclient_logging_patch()
+
 run_pipeline(org_url, project_name, pipeline_id, token)
