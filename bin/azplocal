@@ -2,13 +2,13 @@
 import argparse
 import base64
 import requests
-from requests.auth import HTTPBasicAuth
 import json
 import logging
 import http.client
 
 httpclient_logger = logging.getLogger("http.client")
-AGENT_IMAGE_NAME="dockeragent:latest"
+AGENT_IMAGE_NAME = "dockeragent:latest"
+
 
 def httpclient_logging_patch(level=logging.DEBUG):
     """Enable HTTPConnection debug logging to the logging framework"""
@@ -21,6 +21,7 @@ def httpclient_logging_patch(level=logging.DEBUG):
     http.client.print = httpclient_log
     # enable debugging
     http.client.HTTPConnection.debuglevel = 1
+
 
 def send_api_request(url, personal_access_token, method="GET", data=None):
     header_value = f":{personal_access_token}"
@@ -40,7 +41,9 @@ def send_api_request(url, personal_access_token, method="GET", data=None):
     else:
         raise Exception(f"Request failed with status code {response.status_code}:\n{response.text}")
 
-def run_pipeline(org_url, project_name, pipeline_id, personal_access_token):
+
+def run_pipeline(org_url, project_name, pipeline_id, personal_access_token, file_path):
+    yaml_content = read_yaml_to_string(file_path)
     run_api_url = f"{org_url}/{project_name}/_apis/pipelines/{pipeline_id}/runs?api-version=7.0"
     payload = json.dumps({
         "resources": {
@@ -48,11 +51,36 @@ def run_pipeline(org_url, project_name, pipeline_id, personal_access_token):
                 "self": {
                     "refName": "refs/heads/master"
                 }
-            }
+            },
+            "yamlOverride": yaml_content
         }
     })
     response = send_api_request(run_api_url, personal_access_token, 'POST', payload)
     print(response) 
+
+
+def validate_pipeline(org_url, project_name, pipeline_id, personal_access_token, file_path):
+    yaml_content = read_yaml_to_string(file_path)
+    run_api_url = f"{org_url}/{project_name}/_apis/pipelines/{pipeline_id}/runs?api-version=7.0"
+    payload = json.dumps({
+        "previewRun": True,
+        "yamlOverride": yaml_content
+    })
+    response = send_api_request(run_api_url, personal_access_token, 'POST', payload)
+    write_yaml_to_file("final.yml", response["finalYaml"])
+    print(response)
+
+
+def write_yaml_to_file(filename, content):
+    with open(filename, 'w') as file:
+        file.write(content)
+
+
+def read_yaml_to_string(filename):
+    with open(filename, 'r') as file:
+        content = file.read()
+    return content
+
 
 # Create the argument parser
 parser = argparse.ArgumentParser(description='Running and debugging Azure Pipelines on a local docker container')
@@ -64,6 +92,7 @@ parser.add_argument('-t', '--token', type=str, help='Personal Access Token to ac
 parser.add_argument('-f', '--file', type=str, help='Azure Pipeline Yaml file')
 parser.add_argument('-i', '--id', type=str, help='Pipeline Id from Azure Pipelines (can be found in the url)')
 parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+parser.add_argument("--validate", action="store_true", help="Enable verbose logging")
 
 # Parse the command-line arguments
 args = parser.parse_args()
@@ -79,4 +108,7 @@ if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
     httpclient_logging_patch()
 
-run_pipeline(org_url, project_name, pipeline_id, token)
+if args.validate:
+    validate_pipeline(org_url, project_name, pipeline_id, token, file_path)
+else:
+    run_pipeline(org_url, project_name, pipeline_id, token, file_path)
