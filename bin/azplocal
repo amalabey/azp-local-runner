@@ -6,39 +6,76 @@ import json
 import logging
 import http.client
 from git import Repo
-import uuid
-import hashlib
 
 httpclient_logger = logging.getLogger("http.client")
 AGENT_IMAGE_NAME = "dockeragent:latest"
 
 
-def create_temp_branch(org_url, project_name, personal_access_token, branch_name):
+def recreate_temp_branch(org_url, project_name, personal_access_token, repo_path):
+    git_username = get_git_username(repo_path)
+    git_username_hash = generate_unique_int(git_username)
+    temp_branch_name = f"tmp-{pipeline_id}-{git_username_hash}"
+
+    # Delete the temp branch if it already exists
+    existing_remote_ref = get_remote_branch(org_url, project_name, personal_access_token, temp_branch_name)
+    if len(existing_remote_ref["value"]) > 0:
+        delete_temp_branch(org_url, project_name, personal_access_token, temp_branch_name, existing_remote_ref["value"][0]["objectId"])
+
+    # Get the remote tracking branch for the currently active branch
+    active_branch_name = get_active_branch_name(repo_path)
+    remote_tracking_ref = get_remote_branch(org_url, project_name, personal_access_token, active_branch_name)
+    if len(remote_tracking_ref["value"]) == 0:
+        raise Exception("Unable to find the remote tracking branch for the active branch. Please publish the branch")
+    object_id = remote_tracking_ref["value"][0]["objectId"]
+
+    # Create the new temp branch
+    create_temp_branch(org_url, project_name, personal_access_token, temp_branch_name, object_id)
+
+
+def get_active_branch_name(repo_path):
+    try:
+        repo = Repo(repo_path)
+        return repo.active_branch.name
+    except Exception as e:
+        print("Error: Unable to get remote branch name.", str(e))
+        return None
+
+
+def delete_temp_branch(org_url, project_name, personal_access_token, branch_name, commit_id):
     api_url = f"{org_url}/{project_name}/_apis/git/repositories/{project_name}/refs?api-version=6.0"
-    new_uuid = uuid.uuid4()
-    uuid_string = str(new_uuid)
-    sha1_hash = hashlib.sha1(uuid_string.encode()).hexdigest()
     payload = json.dumps([
         {
             "name": f"refs/heads/{branch_name}",
-            "oldObjectId": "0000000000000000000000000000000000000000",
-            "newObjectId": sha1_hash
+            "oldObjectId": commit_id,
+            "newObjectId": "0000000000000000000000000000000000000000"
         }
     ])
     response = send_api_request(api_url, personal_access_token, 'POST', payload)
     print(response)
 
 
-def get_branch(org_url, project_name, personal_access_token, branch_name):
+def create_temp_branch(org_url, project_name, personal_access_token, branch_name, commit_id):
+    api_url = f"{org_url}/{project_name}/_apis/git/repositories/{project_name}/refs?api-version=6.0"
+    payload = json.dumps([
+        {
+            "name": f"refs/heads/{branch_name}",
+            "oldObjectId": "0000000000000000000000000000000000000000",
+            "newObjectId": commit_id
+        }
+    ])
+    response = send_api_request(api_url, personal_access_token, 'POST', payload)
+    print(response)
+
+
+def get_remote_branch(org_url, project_name, personal_access_token, branch_name):
     ref_api_url = f"{org_url}/{project_name}/_apis/git/repositories/{project_name}/refs?filterContains={branch_name}&api-version=6.0"
     response = send_api_request(ref_api_url, personal_access_token, 'GET')
-    print(response) 
+    return response
 
 
-def generate_unique_int(string):
-    unique_hash = hash(string)
-    unique_int = unique_hash if unique_hash >= 0 else -unique_hash
-    return unique_int
+def generate_unique_int(text):
+    number = sum(ord(c) for c in text)
+    return number
 
 
 def get_git_username(repo_path):
@@ -151,11 +188,10 @@ if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
     httpclient_logging_patch()
 
-git_username = get_git_username(repo_path)
-git_username_hash = generate_unique_int(git_username)
-temp_branch_name = f"{pipeline_id}-{git_username_hash}"
+recreate_temp_branch(org_url, project_name, token, repo_path)
 
-create_temp_branch(org_url, project_name, token, temp_branch_name)
+# delete_temp_branch(org_url, project_name, token, temp_branch_name)
+# create_temp_branch(org_url, project_name, token, temp_branch_name)
 
 # if args.validate:
 #     validate_pipeline(org_url, project_name, pipeline_id, token, file_path)
