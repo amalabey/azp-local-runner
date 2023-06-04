@@ -6,9 +6,33 @@ import json
 import logging
 import http.client
 from git import Repo
+import uuid
+import hashlib
 
 httpclient_logger = logging.getLogger("http.client")
 AGENT_IMAGE_NAME = "dockeragent:latest"
+
+
+def create_temp_branch(org_url, project_name, personal_access_token, branch_name):
+    api_url = f"{org_url}/{project_name}/_apis/git/repositories/{project_name}/refs?api-version=6.0"
+    new_uuid = uuid.uuid4()
+    uuid_string = str(new_uuid)
+    sha1_hash = hashlib.sha1(uuid_string.encode()).hexdigest()
+    payload = json.dumps([
+        {
+            "name": f"refs/heads/{branch_name}",
+            "oldObjectId": "0000000000000000000000000000000000000000",
+            "newObjectId": sha1_hash
+        }
+    ])
+    response = send_api_request(api_url, personal_access_token, 'POST', payload)
+    print(response)
+
+
+def get_branch(org_url, project_name, personal_access_token, branch_name):
+    ref_api_url = f"{org_url}/{project_name}/_apis/git/repositories/{project_name}/refs?filterContains={branch_name}&api-version=6.0"
+    response = send_api_request(ref_api_url, personal_access_token, 'GET')
+    print(response) 
 
 
 def generate_unique_int(string):
@@ -128,9 +152,12 @@ if args.verbose:
     httpclient_logging_patch()
 
 git_username = get_git_username(repo_path)
-print(generate_unique_int(git_username))
+git_username_hash = generate_unique_int(git_username)
+temp_branch_name = f"{pipeline_id}-{git_username_hash}"
 
-if args.validate:
-    validate_pipeline(org_url, project_name, pipeline_id, token, file_path)
-else:
-    run_pipeline(org_url, project_name, pipeline_id, token, file_path)
+create_temp_branch(org_url, project_name, token, temp_branch_name)
+
+# if args.validate:
+#     validate_pipeline(org_url, project_name, pipeline_id, token, file_path)
+# else:
+#     run_pipeline(org_url, project_name, pipeline_id, token, file_path)
