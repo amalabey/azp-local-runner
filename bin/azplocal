@@ -29,7 +29,8 @@ def recreate_temp_branch(org_url, project_name, personal_access_token, repo_path
     object_id = remote_tracking_ref["value"][0]["objectId"]
 
     # Create the new temp branch
-    create_temp_branch(org_url, project_name, personal_access_token, temp_branch_name, object_id)
+    temp_branch_ref = create_temp_branch(org_url, project_name, personal_access_token, temp_branch_name, object_id)
+    return (temp_branch_ref["value"][0]["name"], temp_branch_ref["value"][0]["newObjectId"])
 
 
 def get_active_branch_name(repo_path):
@@ -51,7 +52,7 @@ def delete_temp_branch(org_url, project_name, personal_access_token, branch_name
         }
     ])
     response = send_api_request(api_url, personal_access_token, 'POST', payload)
-    print(response)
+    return response
 
 
 def create_temp_branch(org_url, project_name, personal_access_token, branch_name, commit_id):
@@ -64,7 +65,7 @@ def create_temp_branch(org_url, project_name, personal_access_token, branch_name
         }
     ])
     response = send_api_request(api_url, personal_access_token, 'POST', payload)
-    print(response)
+    return response
 
 
 def get_remote_branch(org_url, project_name, personal_access_token, branch_name):
@@ -134,7 +135,7 @@ def run_pipeline(org_url, project_name, pipeline_id, personal_access_token, file
         }
     })
     response = send_api_request(run_api_url, personal_access_token, 'POST', payload)
-    print(response) 
+    return response
 
 
 def validate_pipeline(org_url, project_name, pipeline_id, personal_access_token, file_path):
@@ -146,7 +147,7 @@ def validate_pipeline(org_url, project_name, pipeline_id, personal_access_token,
     })
     response = send_api_request(run_api_url, personal_access_token, 'POST', payload)
     write_yaml_to_file("final.yml", response["finalYaml"])
-    print(response)
+    return response
 
 
 def write_yaml_to_file(filename, content):
