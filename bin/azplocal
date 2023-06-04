@@ -5,9 +5,26 @@ import requests
 import json
 import logging
 import http.client
+from git import Repo
 
 httpclient_logger = logging.getLogger("http.client")
 AGENT_IMAGE_NAME = "dockeragent:latest"
+
+
+def generate_unique_int(string):
+    unique_hash = hash(string)
+    unique_int = unique_hash if unique_hash >= 0 else -unique_hash
+    return unique_int
+
+
+def get_git_username(repo_path):
+    try:
+        repo = Repo(repo_path)
+        git_username = repo.config_reader().get_value('user', 'name')
+        return git_username
+    except Exception as e:
+        print("Error: Unable to get git username.", str(e))
+        return None
 
 
 def httpclient_logging_patch(level=logging.DEBUG):
@@ -90,6 +107,7 @@ parser.add_argument('-o', '--org', type=str, help='Url to Azure DevOps organisat
 parser.add_argument('-p', '--project', type=str, help='Azure DevOps project name')
 parser.add_argument('-t', '--token', type=str, help='Personal Access Token to access Azure DevOps')
 parser.add_argument('-f', '--file', type=str, help='Azure Pipeline Yaml file')
+parser.add_argument('-r', '--repo_path', type=str, help='Repository path')
 parser.add_argument('-i', '--id', type=str, help='Pipeline Id from Azure Pipelines (can be found in the url)')
 parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
 parser.add_argument("--validate", action="store_true", help="Enable verbose logging")
@@ -103,10 +121,14 @@ token = args.token
 project_name = args.project
 file_path = args.file
 pipeline_id = args.id
+repo_path = args.repo_path
 
 if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
     httpclient_logging_patch()
+
+git_username = get_git_username(repo_path)
+print(generate_unique_int(git_username))
 
 if args.validate:
     validate_pipeline(org_url, project_name, pipeline_id, token, file_path)
