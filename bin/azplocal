@@ -68,6 +68,38 @@ def create_temp_branch(org_url, project_name, personal_access_token, branch_name
     return response
 
 
+def update_remote_file(org_url, project_name, personal_access_token, ref_name, object_id, repo_path, file_path):
+    api_url = f"{org_url}/{project_name}/_apis/git/repositories/eShopOnWeb/pushes?api-version=7.0"
+    file_content = read_yaml_to_string(f"{repo_path}/{file_path}")
+    payload = json.dumps({
+        "refUpdates": [
+            {
+                "name": ref_name,
+                "oldObjectId": object_id
+            }
+        ],
+        "commits": [
+            {
+                "comment": "Update pipeline in temp branch.",
+                "changes": [
+                    {
+                        "changeType": "edit",
+                        "item": {
+                            "path": file_path
+                        },
+                        "newContent": {
+                            "content": file_content,
+                            "contentType": "rawtext"
+                        }
+                    }
+                ]
+            }
+        ]
+    })
+    response = send_api_request(api_url, personal_access_token, 'POST', payload)
+    return response
+
+
 def get_remote_branch(org_url, project_name, personal_access_token, branch_name):
     ref_api_url = f"{org_url}/{project_name}/_apis/git/repositories/{project_name}/refs?filterContains={branch_name}&api-version=6.0"
     response = send_api_request(ref_api_url, personal_access_token, 'GET')
@@ -113,37 +145,31 @@ def send_api_request(url, personal_access_token, method="GET", data=None):
     }
 
     response = requests.request(method, url, headers=headers, data=data)
-
-    # Handle the response
-    if response.status_code == 200:
-        return response.json()
-    else:
-        raise Exception(f"Request failed with status code {response.status_code}:\n{response.text}")
+    response.raise_for_status()
+    return response.json()
 
 
-def run_pipeline(org_url, project_name, pipeline_id, personal_access_token, file_path):
-    yaml_content = read_yaml_to_string(file_path)
+def run_pipeline(org_url, project_name, pipeline_id, personal_access_token, ref_name):
     run_api_url = f"{org_url}/{project_name}/_apis/pipelines/{pipeline_id}/runs?api-version=7.0"
     payload = json.dumps({
         "resources": {
             "repositories": {
                 "self": {
-                    "refName": "refs/heads/master"
+                    "refName": ref_name
                 }
-            },
-            "yamlOverride": yaml_content
+            }
         }
     })
     response = send_api_request(run_api_url, personal_access_token, 'POST', payload)
     return response
 
 
-def validate_pipeline(org_url, project_name, pipeline_id, personal_access_token, file_path):
-    yaml_content = read_yaml_to_string(file_path)
+def validate_pipeline(org_url, project_name, pipeline_id, personal_access_token, repo_path, file_path):
     run_api_url = f"{org_url}/{project_name}/_apis/pipelines/{pipeline_id}/runs?api-version=7.0"
+    file_content = read_yaml_to_string(f"{repo_path}/{file_path}")
     payload = json.dumps({
         "previewRun": True,
-        "yamlOverride": yaml_content
+        "yamlOverride": file_content
     })
     response = send_api_request(run_api_url, personal_access_token, 'POST', payload)
     write_yaml_to_file("final.yml", response["finalYaml"])
@@ -189,12 +215,11 @@ if args.verbose:
     logging.basicConfig(level=logging.DEBUG)
     httpclient_logging_patch()
 
-recreate_temp_branch(org_url, project_name, token, repo_path)
-
-# delete_temp_branch(org_url, project_name, token, temp_branch_name)
-# create_temp_branch(org_url, project_name, token, temp_branch_name)
-
-# if args.validate:
-#     validate_pipeline(org_url, project_name, pipeline_id, token, file_path)
-# else:
-#     run_pipeline(org_url, project_name, pipeline_id, token, file_path)
+if args.validate:
+    result = validate_pipeline(org_url, project_name, pipeline_id, token, repo_path, file_path)
+    print(result)
+else:
+    ref_name, object_id = recreate_temp_branch(org_url, project_name, token, repo_path)
+    update_remote_file(org_url, project_name, token, ref_name, object_id, repo_path, file_path)
+    result = run_pipeline(org_url, project_name, pipeline_id, token, ref_name)
+    print(result)
