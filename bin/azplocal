@@ -8,21 +8,52 @@ import logging
 import http.client
 from git import Repo
 import socket
-import yaml
+from ruamel.yaml import YAML
+from ruamel.yaml.compat import StringIO
 
 httpclient_logger = logging.getLogger("http.client")
 AGENT_IMAGE_NAME = "azp-local-agent:latest"
+BREAKPOINT_COMMENT = "#breakpoint"
+BREAKPOINT_SCRIPT = "- script: export RHOST=\"host.docker.internal\";export RPORT=4242;python3 -c \'import socket,os,pty;s=socket.socket();s.connect((os.getenv(\"RHOST\"),int(os.getenv(\"RPORT\"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")\'"
+
+
+class StringExportableYaml(YAML):
+    def dump(self, data, stream=None, **kw):
+        inefficient = False
+        if stream is None:
+            inefficient = True
+            stream = StringIO()
+        YAML.dump(self, data, stream, **kw)
+        if inefficient:
+            return stream.getvalue()
+
+
+def insert_breakpoints(yaml_text):
+    lines = yaml_text.split('\n')
+    replaced_lines = []
+
+    for line in lines:
+        indent = len(line) - len(line.lstrip())
+        replaced_line = line
+        replaced_line = replaced_line.replace(BREAKPOINT_COMMENT, BREAKPOINT_SCRIPT)
+        replaced_lines.append(replaced_line.rjust(indent + len(replaced_line) - len(line)))
+
+    replaced_text = '\n'.join(replaced_lines)
+    return replaced_text
 
 
 def get_updated_pipeline_yaml(repo_path, file_path, agent_name):
+    yaml = StringExportableYaml()
     with open(f"{repo_path}/{file_path}", 'r') as file:
-        yaml_data = yaml.load(file, Loader=yaml.FullLoader)
+        yaml_data = yaml.load(file)
         # Set pipeline agent to point to local agent
         yaml_data["pool"] = {
             "name": "Default",
             "demands": [f"agent.name -equals {agent_name}"]
         }
-        yaml_text = yaml.dump(yaml_data, sort_keys=False)
+        # Add reverse shells to breakpoint comments
+        yaml_text = yaml.dump(yaml_data)
+        yaml_text = insert_breakpoints(yaml_text)
         return yaml_text
 
 
