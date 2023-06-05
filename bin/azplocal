@@ -8,9 +8,22 @@ import logging
 import http.client
 from git import Repo
 import socket
+import yaml
 
 httpclient_logger = logging.getLogger("http.client")
 AGENT_IMAGE_NAME = "azp-local-agent:latest"
+
+
+def get_updated_pipeline_yaml(repo_path, file_path, agent_name):
+    with open(f"{repo_path}/{file_path}", 'r') as file:
+        yaml_data = yaml.load(file, Loader=yaml.FullLoader)
+        # Set pipeline agent to point to local agent
+        yaml_data["pool"] = {
+            "name": "Default",
+            "demands": [f"agent.name -equals {agent_name}"]
+        }
+        yaml_text = yaml.dump(yaml_data, sort_keys=False)
+        return yaml_text
 
 
 def container_exists(client, container_name):
@@ -93,9 +106,8 @@ def create_temp_branch(org_url, project_name, personal_access_token, branch_name
     return response
 
 
-def update_remote_file(org_url, project_name, personal_access_token, ref_name, object_id, repo_path, file_path):
+def update_remote_file(org_url, project_name, personal_access_token, ref_name, object_id, file_path, file_content):
     api_url = f"{org_url}/{project_name}/_apis/git/repositories/eShopOnWeb/pushes?api-version=7.0"
-    file_content = read_yaml_to_string(f"{repo_path}/{file_path}")
     payload = json.dumps({
         "refUpdates": [
             {
@@ -249,6 +261,7 @@ else:
     agent_name = f"agent-{identifier}"
     start_local_agent(org_url, token, agent_name, agent_name)
     ref_name, object_id = recreate_temp_branch(org_url, project_name, token, repo_path)
-    update_remote_file(org_url, project_name, token, ref_name, object_id, repo_path, file_path)
+    yaml_content = get_updated_pipeline_yaml(repo_path, file_path, agent_name)
+    update_remote_file(org_url, project_name, token, ref_name, object_id, file_path, yaml_content)
     result = run_pipeline(org_url, project_name, pipeline_id, token, ref_name)
     print(result)
