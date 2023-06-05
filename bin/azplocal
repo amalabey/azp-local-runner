@@ -10,7 +10,7 @@ from git import Repo
 import socket
 
 httpclient_logger = logging.getLogger("http.client")
-AGENT_IMAGE_NAME = "localhost/azp-local-agent:latest"
+AGENT_IMAGE_NAME = "azp-local-agent:latest"
 
 
 def container_exists(client, container_name):
