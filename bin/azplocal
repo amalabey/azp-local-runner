@@ -16,6 +16,7 @@ import signal
 AGENT_IMAGE_NAME = "azp-local-agent:latest"
 BREAKPOINT_COMMENT = "#breakpoint"
 BREAKPOINT_SCRIPT = "- script: export RHOST=\"host.docker.internal\";export RPORT=4242;python3 -c \'import socket,os,pty;s=socket.socket();s.connect((os.getenv(\"RHOST\"),int(os.getenv(\"RPORT\"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")\'"
+AGENT_VOLUME_NAME = "azp-work-volume"
 
 httpclient_logger = logging.getLogger("http.client")
 
@@ -109,8 +110,23 @@ def start_local_agent(org_url, personal_access_token, container_name, agent_name
         "AZP_AGENT_NAME": agent_name
     }
 
+    existing_volumes = client.volumes.list(filters={'name': AGENT_VOLUME_NAME})
+    if existing_volumes:
+        volume = existing_volumes[0]
+    else:
+        volume = client.volumes.create(name=AGENT_VOLUME_NAME)
+
     if not container_exists(client, container_name):
-        client.containers.run(AGENT_IMAGE_NAME, detach=True, name=container_name, environment=agent_params)
+        client.containers.run(AGENT_IMAGE_NAME,
+                              volumes={
+                                  volume.name: {
+                                        "bind": "/azp/_work",
+                                        "mode": "rw"
+                                  }
+                              },
+                              detach=True,
+                              name=container_name,
+                              environment=agent_params)
     else:
         container = client.containers.get(container_name)
         container.start()
