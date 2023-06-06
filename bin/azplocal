@@ -10,11 +10,14 @@ from git import Repo
 import socket
 from ruamel.yaml import YAML
 from ruamel.yaml.compat import StringIO
+import socket, sys, time
+import signal
 
-httpclient_logger = logging.getLogger("http.client")
 AGENT_IMAGE_NAME = "azp-local-agent:latest"
 BREAKPOINT_COMMENT = "#breakpoint"
 BREAKPOINT_SCRIPT = "- script: export RHOST=\"host.docker.internal\";export RPORT=4242;python3 -c \'import socket,os,pty;s=socket.socket();s.connect((os.getenv(\"RHOST\"),int(os.getenv(\"RPORT\"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")\'"
+
+httpclient_logger = logging.getLogger("http.client")
 
 
 class StringExportableYaml(YAML):
@@ -26,6 +29,38 @@ class StringExportableYaml(YAML):
         YAML.dump(self, data, stream, **kw)
         if inefficient:
             return stream.getvalue()
+
+
+def listen_rvshell(ip, port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind((ip, port))
+    sock.listen(1)
+    print("Waiting for break point hit... ")
+    conn, addr = sock.accept()
+    print('Connected to agent: ', addr)
+    # Upgrade connection using pty
+    # upgrade_cmd = "python3 -c \'import pty; pty.spawn(\"/bin/sh\")\'\n\n"
+    # conn.send(upgrade_cmd.encode('utf-8'))
+    while True:
+        # Receive data from the target and get user input
+        data = conn.recv(1024)
+        if not data:
+            print("Connection closed")
+            sock.close()
+            break
+
+        ans = data.decode()
+        sys.stdout.write(ans)
+        command = input()
+
+        # Send command
+        command += "\n"
+        conn.send(command.encode())
+        time.sleep(1)
+
+        # Remove the output of the "input()" function
+        sys.stdout.write("\033[A" + ans.split("\n")[-1])
 
 
 def insert_breakpoints(yaml_text):
@@ -256,6 +291,20 @@ def read_yaml_to_string(filename):
     return content
 
 
+# Define a signal handler for Ctrl+C
+def signal_handler(signal, frame):
+    print("Ctrl+C received. Performing shutdown actions...")
+    # Perform shutdown actions
+    # if sock is not None:
+    #     # sock.shutdown(socket.SHUT_RDWR)
+    #     sock.close()
+    # Exit the program
+    sys.exit(0)
+
+
+# Set the signal handler
+signal.signal(signal.SIGINT, signal_handler)
+
 # Create the argument parser
 parser = argparse.ArgumentParser(description='Running and debugging Azure Pipelines on a local docker container')
 
@@ -297,3 +346,5 @@ else:
     update_remote_file(org_url, project_name, token, ref_name, object_id, file_path, yaml_content)
     result = run_pipeline(org_url, project_name, pipeline_id, token, ref_name)
     print(result)
+    while True:
+        listen_rvshell("0.0.0.0", 4242)
