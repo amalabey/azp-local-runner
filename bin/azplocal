@@ -33,10 +33,10 @@ def insert_breakpoints(yaml_text):
     replaced_lines = []
 
     for line in lines:
-        indent = len(line) - len(line.lstrip())
-        replaced_line = line
-        replaced_line = replaced_line.replace(BREAKPOINT_COMMENT, BREAKPOINT_SCRIPT)
-        replaced_lines.append(replaced_line.rjust(indent + len(replaced_line) - len(line)))
+        if line.strip() == BREAKPOINT_COMMENT:
+            indent = len(line) - len(line.lstrip())
+            line = ' ' * indent + BREAKPOINT_SCRIPT
+        replaced_lines.append(line)
 
     replaced_text = '\n'.join(replaced_lines)
     return replaced_text
@@ -45,7 +45,9 @@ def insert_breakpoints(yaml_text):
 def get_updated_pipeline_yaml(repo_path, file_path, agent_name):
     yaml = StringExportableYaml()
     with open(f"{repo_path}/{file_path}", 'r') as file:
-        yaml_data = yaml.load(file)
+        yaml_file_contents = file.read()
+        yaml_file_contents = insert_breakpoints(yaml_file_contents)
+        yaml_data = yaml.load(yaml_file_contents)
         # Set pipeline agent to point to local agent
         yaml_data["pool"] = {
             "name": "Default",
@@ -53,7 +55,6 @@ def get_updated_pipeline_yaml(repo_path, file_path, agent_name):
         }
         # Add reverse shells to breakpoint comments
         yaml_text = yaml.dump(yaml_data)
-        yaml_text = insert_breakpoints(yaml_text)
         return yaml_text
 
 
