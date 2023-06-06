@@ -2,6 +2,7 @@ bcrypt==4.0.1
 BTrees==5.0
 certifi==2023.5.7
 cffi==1.15.1
+click>=7.1.2
 charset-normalizer==2.0.12
 colorama==0.4.6
 commonmark==0.9.1
@@ -17,7 +18,6 @@ packaging==20.9
 paramiko-ng==2.8.10
 persistent==5.0
 prompt-toolkit==3.0.38
-pwncat-cs==0.5.4
 pycparser==2.21
 pycryptodome==3.18.0
 Pygments==2.15.1
