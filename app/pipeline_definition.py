@@ -7,14 +7,24 @@ BREAKPOINT_SCRIPT = "- script: export RHOST=\"host.docker.internal\";export RPOR
 
 
 class PipelineDefinition(YAML):
-    def load_from_file(self, file_path):
-        with open(file_path, 'r') as file:
-            yaml_file_contents = file.read()
-            self.yaml = self.load(yaml_file_contents)
+    def __init__(self, file_path):
+        self.file_path = file_path
 
-    def insert_breakpoints(self, breakpoint_comment=BREAKPOINT_COMMENT,
-                           breakpoint_script=BREAKPOINT_SCRIPT):
-        yaml_text = self.dump()
+    def annotate_yaml(self, debug_flag, agent_name):
+        yaml = StringExportableYaml()
+        with open(self.file_path, 'r') as file:
+            yaml_file_contents = file.read()
+
+            if debug_flag:
+                yaml_file_contents = self._insert_breakpoints(yaml_file_contents)
+
+            yaml_data = yaml.load(yaml_file_contents)
+            yaml_data = self._set_agent(agent_name, yaml_data)
+            return yaml.dump(yaml_data)
+
+    def _insert_breakpoints(self, yaml_text,
+                            breakpoint_comment=BREAKPOINT_COMMENT,
+                            breakpoint_script=BREAKPOINT_SCRIPT):
         lines = yaml_text.split('\n')
         replaced_lines = []
 
@@ -25,20 +35,23 @@ class PipelineDefinition(YAML):
             replaced_lines.append(line)
 
         replaced_text = '\n'.join(replaced_lines)
-        self.yaml = self.load(replaced_text)
+        return replaced_text
 
-    def set_agent(self, agent_name):
+    def _set_agent(self, agent_name, yaml_data):
         # Set pipeline agent to point to local agent
-        self.yaml["pool"] = {
+        yaml_data["pool"] = {
             "name": "Default",
             "demands": [f"agent.name -equals {agent_name}"]
         }
+        return yaml_data
 
-    def dump(self, stream=None, **kw):
+
+class StringExportableYaml(YAML):
+    def dump(self, data, stream=None, **kw):
         inefficient = False
         if stream is None:
             inefficient = True
             stream = StringIO()
-        YAML.dump(self, self.yaml, stream, **kw)
+        YAML.dump(self, data, stream, **kw)
         if inefficient:
             return stream.getvalue()

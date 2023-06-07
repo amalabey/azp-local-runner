@@ -11,9 +11,7 @@ class DebugConsole():
         self.ip = ip
         self.port = port
 
-    def listen(self, input=sys.stdin, output=sys.stdout):
-        sys.stdin = input
-        sys.stdout = output
+    def listen(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind((self.ip, self.port))

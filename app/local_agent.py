@@ -10,8 +10,8 @@ class LocalAgent():
         self.org_url = org_url
         self.personal_access_token = personal_access_token
         self.image_name = image_name
-        self.container_name = f"azp-{self.name}"
-        self.agent_name = f"azp-{self.name}"
+        self.container_name = f"azp-{name}"
+        self.agent_name = f"azp-{name}"
 
     def get_agent_name(self):
         return self.agent_name

@@ -1,17 +1,17 @@
 import os
 import socket
-from azure_pipelines_client import AzurePipelinesClient
-from local_agent import LocalAgent
-from local_git_repo import LocalGitRepository
-from azure_repos_client import AzureReposClient
-from pipeline_definition import PipelineDefinition
-from debug_console import DebugConsole
+from app.azure_pipelines_client import AzurePipelinesClient
+from app.local_agent import LocalAgent
+from app.local_git_repo import LocalGitRepository
+from app.azure_repos_client import AzureReposClient
+from app.pipeline_definition import PipelineDefinition
+from app.debug_console import DebugConsole
 
 VALIDATED_YAML_FILENAME = "final_validated.yml"
 
 
-def validate(org_url, project_name, pipeline_id, personal_access_token,
-             repo_path, file_path):
+def validate_pipeline(org_url, project_name, pipeline_id,
+                      personal_access_token, repo_path, file_path):
     pipelines_client = AzurePipelinesClient(org_url, project_name,
                                             personal_access_token)
     file_abs_path = os.path.join(repo_path, file_path)
@@ -23,8 +23,8 @@ def validate(org_url, project_name, pipeline_id, personal_access_token,
     print(f"Written validated Yaml to {VALIDATED_YAML_FILENAME}")
 
 
-def run(org_url, project_name, pipeline_id, personal_access_token, repo_path,
-        file_path):
+def run_pipeline(org_url, project_name, pipeline_id, personal_access_token,
+                 repo_path, file_path, debug):
     hostname = socket.gethostname()
     identifier = hostname.replace(" ", "").lower()
 
@@ -35,15 +35,12 @@ def run(org_url, project_name, pipeline_id, personal_access_token, repo_path,
     # Recreate the temp branch
     ref_name, object_id = _recreate_temp_branch(org_url, project_name,
                                                 personal_access_token,
-                                                repo_path)
+                                                repo_path, pipeline_id)
 
     # Manipulate pipeline yaml to point to local agent and add breakpoints
     file_abs_path = os.path.join(repo_path, file_path)
-    pipeline_defition = PipelineDefinition()
-    pipeline_defition.load_from_file(file_abs_path)
-    pipeline_defition.insert_breakpoints()
-    pipeline_defition.set_agent(local_agent.get_agent_name())
-    yaml_content = pipeline_defition.dump()
+    pipeline_defition = PipelineDefinition(file_abs_path)
+    yaml_content = pipeline_defition.annotate_yaml(debug, local_agent.get_agent_name())
 
     # Update remote file in the temp branch
     azure_repos_client = AzureReposClient(org_url, project_name,
@@ -54,13 +51,13 @@ def run(org_url, project_name, pipeline_id, personal_access_token, repo_path,
     # Run the pipeline
     azure_pipelines_client = AzurePipelinesClient(org_url, project_name,
                                                   personal_access_token)
-    result = azure_pipelines_client.run_pipeline(pipeline_id, ref_name)
-    print(result)
+    azure_pipelines_client.run_pipeline(pipeline_id, ref_name)
 
     # Listen for a reverse shell as the debug console
-    debug_console = DebugConsole()
-    while True:
-        debug_console.listen()
+    if debug:
+        debug_console = DebugConsole()
+        while True:
+            debug_console.listen()
 
 
 def _recreate_temp_branch(org_url, project_name, personal_access_token,

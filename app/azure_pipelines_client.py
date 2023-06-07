@@ -1,5 +1,5 @@
 import json
-from azure_devops_client import AzureDevOpsClient
+from app.azure_devops_client import AzureDevOpsClient
 
 
 class AzurePipelinesClient(AzureDevOpsClient):
