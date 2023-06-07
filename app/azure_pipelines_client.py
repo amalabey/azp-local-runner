@@ -1,4 +1,5 @@
 import json
+import requests
 from app.azure_devops_client import AzureDevOpsClient
 
 
@@ -20,6 +21,7 @@ class AzurePipelinesClient(AzureDevOpsClient):
             }
         })
         response = self.send_api_request(run_api_url, 'POST', payload)
+        print(response)
         return response
 
     def validate_pipeline(self, pipeline_id, file_path):
@@ -35,3 +37,21 @@ class AzurePipelinesClient(AzureDevOpsClient):
             state = response["state"]
             finalYaml = response["finalYaml"]
             return (state, finalYaml)
+
+    def get_logs(self, pipeline_id, run_id):
+        api_url = f"{self.org_url}/{self.project_name}/_apis/pipelines/{pipeline_id}/runs/{run_id}/logs"
+        return self.send_api_request(api_url, "GET")
+
+    def get_log_content(self, log_url):
+        log_meta_data = self.send_api_request(f"{log_url}?$expand=signedContent", "GET")
+        signed_url = log_meta_data["signedContent"]["url"]
+        response = requests.request("GET", signed_url)
+        response.raise_for_status()
+        return response
+
+    def get_run_state(self, pipeline_id, run_id):
+        api_url = f"{self.org_url}/{self.project_name}/_apis/pipelines/{pipeline_id}/runs/{run_id}?api-version=7.0"
+        response = self.send_api_request(api_url, "GET")
+        state = response["state"]
+        result = response["result"]
+        return (state, result)
