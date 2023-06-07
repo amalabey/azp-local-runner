@@ -5,7 +5,6 @@ from app.application import validate_pipeline
 
 @click.group()
 def cli():
-    click.echo("Expect sub-command: validate | run")
     pass
 
 
