@@ -1,6 +1,6 @@
 import docker
 
-DEFAULT_AGENT_IMAGE_NAME = "azp-local-agent:latest"
+DEFAULT_AGENT_IMAGE_NAME = "amalabey/azp-local-runner"
 AGENT_VOLUME_NAME = "azp-work-volume"
 
 
