@@ -24,6 +24,9 @@ class TerminalApp(App):
                 for number in range(100):
                     yield Static(f"Vertical layout, child {number}")
 
+    def on_mount(self) -> None:
+        self.screen.styles.background = "darkblue"
+
     def action_submit(self):
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
         cmd_output = self.query_one(f"#{CMD_OUTPUT_ID}")
