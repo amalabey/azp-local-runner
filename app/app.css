@@ -5,27 +5,28 @@
     grid-rows: 1fr;
 }
 
-#right-pane {
-    width: 100%;
-    height: 100%;
-    row-span: 2;
-    background: $panel;
-    border: dodgerblue;
-}
-
-
 #left-pane {
     height: 100%;
     layout: grid;
     grid-size: 1;
     grid-columns: 1fr;
-    grid-rows: 1fr;
-    grid-gutter: 1;
+    grid-rows: 95% 5%;
     background: $panel;
-    border: greenyellow;
+    border: green;
 }
 
-#cmd-input {
-    dock: bottom;
+#cmd-output-container {
     background: $boost;
+}
+
+#cmd-input-container {
+    background: $boost;
+}
+
+#right-pane {
+    width: 100%;
+    height: 100%;
+    row-span: 2;
+    background: $panel;
+    border: green;
 }
