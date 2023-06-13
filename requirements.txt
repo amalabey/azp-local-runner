@@ -44,3 +44,4 @@ ZODB3==3.11.0
 zodbpickle==3.0.1
 zodburi==2.6.0
 zope.interface==6.0
+textual==0.27.0
