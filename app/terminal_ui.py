@@ -2,9 +2,11 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Static
 from textual.widgets import Input
+from rich.syntax import Syntax
 
 CMD_INPUT_ID = "cmd-input-text"
 CMD_OUTPUT_ID = "cmd-output-text"
+LOG_OUTPUT_ID = "log-output-text"
 
 
 class TerminalUi(App):
@@ -26,8 +28,7 @@ class TerminalUi(App):
                     cmd_input.action_submit = self.on_action_submit
                     yield cmd_input
             with VerticalScroll(id="right-pane"):
-                for number in range(100):
-                    yield Static(f"Vertical layout, child {number}")
+                yield Static(".......logs output.....", id=LOG_OUTPUT_ID)
 
     def on_mount(self) -> None:
         self.on_load()
@@ -54,6 +55,12 @@ class TerminalUi(App):
 
     def on_load(self):
         pass
+
+    def render_file(self, file_path, file_type):
+        with open(file_path, "rt") as code_file:
+            syntax = Syntax(code_file.read(), file_type, line_numbers=True)
+            log_output = self.query_one(f"#{LOG_OUTPUT_ID}")
+            log_output.update(syntax)
 
 
 if __name__ == "__main__":

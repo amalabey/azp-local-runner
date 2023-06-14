@@ -6,21 +6,18 @@ from app.local_git_repo import LocalGitRepository
 from app.azure_repos_client import AzureReposClient
 from app.pipeline_definition import PipelineDefinition
 from app.debug_console import DebugConsole
+from app.terminal_ui import TerminalUi
+from app.validate_command import ValidateCommand
 
 VALIDATED_YAML_FILENAME = "final_validated.yml"
 
 
 def validate_pipeline(org_url, project_name, pipeline_id,
                       personal_access_token, repo_path, file_path):
-    pipelines_client = AzurePipelinesClient(org_url, project_name,
-                                            personal_access_token)
-    file_abs_path = os.path.join(repo_path, file_path)
-    state, finalYaml = pipelines_client.validate_pipeline(pipeline_id,
-                                                          file_abs_path)
-    print(f"Validation result: {state}")
-    with open(VALIDATED_YAML_FILENAME, 'w') as file:
-        file.write(finalYaml)
-    print(f"Written validated Yaml to {VALIDATED_YAML_FILENAME}")
+    ui = TerminalUi()
+    cmd = ValidateCommand(ui, org_url, project_name, pipeline_id,
+                          personal_access_token, repo_path, file_path)
+    cmd.start()
 
 
 def run_pipeline(org_url, project_name, pipeline_id, personal_access_token,

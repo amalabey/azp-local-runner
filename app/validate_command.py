@@ -39,6 +39,7 @@ class ValidateCommand(Command):
         with open(VALIDATED_YAML_FILENAME, 'w') as file:
             file.write(finalYaml)
         self.app.append_cmd_output(f"\nWritten validated Yaml to {VALIDATED_YAML_FILENAME}")
+        self.app.render_file(VALIDATED_YAML_FILENAME, "yaml")
 
     def handle_command(self):
         cmd_text = self.app.get_cmd_text()
