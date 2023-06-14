@@ -37,9 +37,8 @@ class RunCommand(Command):
         self.app.on_cmd = self.handle_command
         self.app.run()
 
-    def execute(self) -> None:
-        self.app.run_worker(self._run(), exclusive=True)
-        print("done")
+    async def execute(self) -> None:
+        await self._run()
 
     async def _run(self) -> None:
         hostname = socket.gethostname()
@@ -49,7 +48,7 @@ class RunCommand(Command):
         local_agent = LocalAgent(self.org_url, self.personal_access_token,
                                  identifier)
         local_agent.start()
-        self.app.append_cmd_output("\nLocal agent started")
+        self.write_output("\nLocal agent started")
 
         # Recreate the temp branch
         ref_name, object_id = self._recreate_temp_branch()
@@ -80,6 +79,9 @@ class RunCommand(Command):
             self.app.append_cmd_output("\nAwaiting connection to debugger")
             self.debug_console.listen()
             self.app.append_cmd_output("\nConnected to debugger")
+
+    def write_output(self, msg):
+        self.app.post_message(TerminalUi.Output(msg))
 
     def handle_response(self, response):
         self.app.append_cmd_output("\n")

@@ -3,6 +3,7 @@ from textual.containers import Container, Horizontal, VerticalScroll
 from textual.widgets import Header, Static
 from textual.widgets import Input
 from rich.syntax import Syntax
+from textual.message import Message
 
 CMD_INPUT_ID = "cmd-input-text"
 CMD_OUTPUT_ID = "cmd-output-text"
@@ -11,6 +12,11 @@ LOG_OUTPUT_ID = "log-output-text"
 
 class TerminalUi(App):
     CSS_PATH = "app.css"
+
+    class Output(Message):
+        def __init__(self, output: str) -> None:
+            self.output = output
+            super().__init__()
 
     def __init__(self):
         super().__init__()
@@ -32,16 +38,22 @@ class TerminalUi(App):
             with VerticalScroll(id="right-pane"):
                 yield Static(".......logs output.....", id=LOG_OUTPUT_ID)
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
         cmd_input.focus()
-        self.on_load()
+
+    async def on_ready(self) -> None:
+        self.run_worker(self.on_load(), exclusive=True)
+        print("mounted")
 
     def on_action_submit(self):
         self.on_cmd()
 
     def on_cmd(self):
         pass
+
+    def on_terminal_ui_output(self, message: Output) -> None:
+        self.append_cmd_output(message.output)
 
     def append_cmd_output(self, text: str):
         cmd_output = self.query_one(f"#{CMD_OUTPUT_ID}")
@@ -57,7 +69,7 @@ class TerminalUi(App):
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
         return cmd_input.value
 
-    def on_load(self):
+    async def on_load(self):
         pass
 
     def render_file(self, file_path, file_type):
@@ -65,6 +77,9 @@ class TerminalUi(App):
             syntax = Syntax(code_file.read(), file_type, line_numbers=True)
             log_output = self.query_one(f"#{LOG_OUTPUT_ID}")
             log_output.update(syntax)
+
+
+
 
 
 if __name__ == "__main__":
