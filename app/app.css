@@ -10,7 +10,7 @@
     layout: grid;
     grid-size: 1;
     grid-columns: 1fr;
-    grid-rows: 95% 5%;
+    grid-rows: 93% 7%;
     background: $panel;
     border: green;
 }
@@ -21,6 +21,22 @@
 
 #cmd-input-container {
     background: $boost;
+    border: solid green;
+}
+
+
+#cmd-bar {
+    content-align: center middle;
+}
+
+#cmd-label-text {
+    width: 1fr;
+    height: 100%;
+    content-align: center middle;
+}
+
+#cmd-input-text {
+    width: 40fr;
 }
 
 #right-pane {

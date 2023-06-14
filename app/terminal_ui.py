@@ -1,5 +1,5 @@
 from textual.app import App, ComposeResult
-from textual.containers import Container, VerticalScroll
+from textual.containers import Container, Horizontal, VerticalScroll
 from textual.widgets import Header, Static
 from textual.widgets import Input
 from rich.syntax import Syntax
@@ -22,15 +22,19 @@ class TerminalUi(App):
         with Container(id="app-grid"):
             with Container(id="left-pane"):
                 with VerticalScroll(id="cmd-output-container"):
-                    yield Static(".......cmd output.....", id=CMD_OUTPUT_ID)
+                    yield Static("......output......", id=CMD_OUTPUT_ID)
                 with Container(id="cmd-input-container"):
-                    cmd_input = Input(placeholder=">", id=CMD_INPUT_ID)
-                    cmd_input.action_submit = self.on_action_submit
-                    yield cmd_input
+                    with Horizontal(id="cmd-bar"):
+                        yield Static(">", id="cmd-label-text")
+                        cmd_input = Input(placeholder="", id=CMD_INPUT_ID)
+                        cmd_input.action_submit = self.on_action_submit
+                        yield cmd_input
             with VerticalScroll(id="right-pane"):
                 yield Static(".......logs output.....", id=LOG_OUTPUT_ID)
 
     def on_mount(self) -> None:
+        cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
+        cmd_input.focus()
         self.on_load()
 
     def on_action_submit(self):
