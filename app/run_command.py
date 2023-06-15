@@ -33,14 +33,11 @@ class RunCommand(Command):
         self.debug_console = None
 
     def start(self) -> None:
-        self.app.on_load = self.execute
+        self.app.on_ui_ready = self.execute
         self.app.on_cmd = self.handle_command
         self.app.run()
 
-    async def execute(self) -> None:
-        await self._run()
-
-    async def _run(self) -> None:
+    def execute(self) -> None:
         hostname = socket.gethostname()
         identifier = hostname.replace(" ", "").lower()
 
@@ -64,24 +61,21 @@ class RunCommand(Command):
                                               self.personal_access_token)
         azure_repos_client.update_remote_file(ref_name, object_id, self.file_path,
                                               yaml_content)
-        self.app.append_cmd_output("\nUpdated yaml in temporary remote branch")
+        self.write_output("\nUpdated yaml in temporary remote branch")
 
         # Run the pipeline
         azure_pipelines_client = AzurePipelinesClient(self.org_url, self.project_name,
                                                       self.personal_access_token)
         azure_pipelines_client.run_pipeline(self.pipeline_id, ref_name)
-        self.app.append_cmd_output("\nRunning pipeline")
+        self.write_output("\nRunning pipeline")
 
         # Listen for a reverse shell as the debug console
         if self.debug:
             self.debug_console = DebugConsole(repel=False)
             self.debug_console.on_response = self.handle_response
-            self.app.append_cmd_output("\nAwaiting connection to debugger")
+            self.write_output("\nAwaiting connection to debugger")
             self.debug_console.listen()
-            self.app.append_cmd_output("\nConnected to debugger")
-
-    def write_output(self, msg):
-        self.app.post_message(TerminalUi.Output(msg))
+            self.write_output("\nConnected to debugger")
 
     def handle_response(self, response):
         self.app.append_cmd_output("\n")

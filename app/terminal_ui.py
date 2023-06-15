@@ -4,6 +4,7 @@ from textual.widgets import Header, Static
 from textual.widgets import Input
 from rich.syntax import Syntax
 from textual.message import Message
+import time
 
 CMD_INPUT_ID = "cmd-input-text"
 CMD_OUTPUT_ID = "cmd-output-text"
@@ -43,11 +44,12 @@ class TerminalUi(App):
         cmd_input.focus()
 
     async def on_ready(self) -> None:
-        self.run_worker(self.on_load(), exclusive=True)
-        print("mounted")
+        self.run_worker(self.on_ui_ready, exclusive=True)
 
     def on_action_submit(self):
         self.on_cmd()
+        cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
+        cmd_input.value = ""
 
     def on_cmd(self):
         pass
@@ -69,7 +71,7 @@ class TerminalUi(App):
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
         return cmd_input.value
 
-    async def on_load(self):
+    def on_ui_ready(self):
         pass
 
     def render_file(self, file_path, file_type):
@@ -77,9 +79,6 @@ class TerminalUi(App):
             syntax = Syntax(code_file.read(), file_type, line_numbers=True)
             log_output = self.query_one(f"#{LOG_OUTPUT_ID}")
             log_output.update(syntax)
-
-
-
 
 
 if __name__ == "__main__":

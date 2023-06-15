@@ -18,3 +18,6 @@ class Command(ABC):
     @abstractmethod
     def handle_command(command: str):
         pass
+
+    def write_output(self, msg):
+        self.app.post_message(TerminalUi.Output(msg))
