@@ -39,7 +39,7 @@ class AzurePipelinesClient(AzureDevOpsClient):
             return (state, finalYaml)
 
     def cancel_pending_jobs(self, remoteBranch):
-        get_jobs_api_url = f"{self.org_url}/{self.project_name}/_apis/build/builds?statusFilter=notStarted&branchName={remoteBranch}&api-version=7.0"
+        get_jobs_api_url = f"{self.org_url}/{self.project_name}/_apis/build/builds?statusFilter=notStarted,inProgress,postponed&branchName={remoteBranch}&api-version=7.0"
         pending_jobs = self.send_api_request(get_jobs_api_url, "GET")
         for pending_job in pending_jobs["value"]:
             build_id = pending_job["id"]
