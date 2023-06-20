@@ -87,7 +87,11 @@ class RunCommand(Command):
         if cmd_text == RUN_CMD_TEXT:
             self.execute()
         elif self.debug_console:
-            self.debug_console.send_command(cmd_text)
+            try:
+                self.debug_console.send_command(cmd_text)
+            except Exception as e:
+                self.write_output(str(e))
+                self.write_output("\n")
 
     def _recreate_temp_branch(self):
         local_git_repo = LocalGitRepository(self.repo_path)
