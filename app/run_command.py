@@ -66,6 +66,7 @@ class RunCommand(Command):
         # Run the pipeline
         azure_pipelines_client = AzurePipelinesClient(self.org_url, self.project_name,
                                                       self.personal_access_token)
+        azure_pipelines_client.cancel_pending_jobs(ref_name)
         azure_pipelines_client.run_pipeline(self.pipeline_id, ref_name)
         self.write_output("\nRunning pipeline")
 
@@ -73,7 +74,7 @@ class RunCommand(Command):
         if self.debug:
             self.debug_console = DebugConsole(repel=False)
             self.debug_console.on_response = self.handle_response
-            self.write_output("\nAwaiting connection to debugger")
+            self.write_output("\nAwaiting connection to local debugger")
             self.debug_console.listen()
             self.write_output("\nConnected to debugger")
 

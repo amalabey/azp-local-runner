@@ -20,7 +20,7 @@ class AzurePipelinesClient(AzureDevOpsClient):
                 }
             }
         })
-        response = self.send_api_request(run_api_url, 'POST', payload)
+        response = self.send_api_request(run_api_url, "POST", payload)
         print(response)
         return response
 
@@ -33,10 +33,20 @@ class AzurePipelinesClient(AzureDevOpsClient):
                 "previewRun": True,
                 "yamlOverride": file_content
             })
-            response = self.send_api_request(run_api_url, 'POST', payload)
+            response = self.send_api_request(run_api_url, "POST", payload)
             state = response["state"]
             finalYaml = response["finalYaml"]
             return (state, finalYaml)
+
+    def cancel_pending_jobs(self, remoteBranch):
+        get_jobs_api_url = f"{self.org_url}/{self.project_name}/_apis/build/builds?statusFilter=notStarted&branchName={remoteBranch}&api-version=7.0"
+        pending_jobs = self.send_api_request(get_jobs_api_url, "GET")
+        for pending_job in pending_jobs["value"]:
+            build_id = pending_job["id"]
+            pending_job["status"] = "Cancelling"
+            request_body = json.dumps(pending_job)
+            cancel_job_api_url = f"{self.org_url}/{self.project_name}/_apis/build/builds/{build_id}?api-version=7.0"
+            self.send_api_request(cancel_job_api_url, "PATCH", request_body)
 
     def get_logs(self, pipeline_id, run_id):
         api_url = f"{self.org_url}/{self.project_name}/_apis/pipelines/{pipeline_id}/runs/{run_id}/logs"
