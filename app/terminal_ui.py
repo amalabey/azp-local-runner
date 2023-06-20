@@ -1,10 +1,9 @@
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, VerticalScroll
-from textual.widgets import Header, Static
+from textual.widgets import Header, Static, Label
 from textual.widgets import Input
 from rich.syntax import Syntax
 from textual.message import Message
-import time
 
 CMD_INPUT_ID = "cmd-input-text"
 CMD_OUTPUT_ID = "cmd-output-text"
@@ -25,19 +24,24 @@ class TerminalUi(App):
         self.log_output_text = ""
 
     def compose(self) -> ComposeResult:
-        yield Header()
+        with Header(id="app-header"):
+            yield Label("Azp Local Runner", id="app-header-text")
         with Container(id="app-grid"):
             with Container(id="left-pane"):
+                with Header():
+                    yield Label("Console")
                 with VerticalScroll(id="cmd-output-container"):
-                    yield Static("......output......", id=CMD_OUTPUT_ID)
+                    yield Static("", id=CMD_OUTPUT_ID)
                 with Container(id="cmd-input-container"):
                     with Horizontal(id="cmd-bar"):
-                        yield Static(">", id="cmd-label-text")
+                        yield Label(">", id="cmd-label-text")
                         cmd_input = Input(placeholder="", id=CMD_INPUT_ID)
                         cmd_input.action_submit = self.on_action_submit
                         yield cmd_input
             with VerticalScroll(id="right-pane"):
-                yield Static(".......logs output.....", id=LOG_OUTPUT_ID)
+                with Header():
+                    yield Label("Output")
+                yield Static("", id=LOG_OUTPUT_ID)
 
     async def on_mount(self) -> None:
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
