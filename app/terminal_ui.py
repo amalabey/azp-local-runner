@@ -7,6 +7,7 @@ from textual.message import Message
 
 CMD_INPUT_ID = "cmd-input-text"
 CMD_OUTPUT_ID = "cmd-output-text"
+CMD_OUTPUT_CONTAINER = "cmd-output-container"
 LOG_OUTPUT_ID = "log-output-text"
 
 
@@ -30,7 +31,7 @@ class TerminalUi(App):
             with Container(id="left-pane"):
                 with Header():
                     yield Label("Console")
-                with VerticalScroll(id="cmd-output-container"):
+                with VerticalScroll(id=CMD_OUTPUT_CONTAINER):
                     yield Static("", id=CMD_OUTPUT_ID)
                 with Container(id="cmd-input-container"):
                     with Horizontal(id="cmd-bar"):
@@ -65,6 +66,8 @@ class TerminalUi(App):
         cmd_output = self.query_one(f"#{CMD_OUTPUT_ID}")
         self.cmd_output_text += text
         cmd_output.update(self.cmd_output_text)
+        cmd_output_container = self.query_one(f"#{CMD_OUTPUT_CONTAINER}")
+        cmd_output_container.scroll_end(animate=False)
 
     def write_cmd_output(self, text: str):
         cmd_output = self.query_one(f"#{CMD_OUTPUT_ID}")
