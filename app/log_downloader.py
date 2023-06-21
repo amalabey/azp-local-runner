@@ -22,11 +22,13 @@ class LogDownloader:
                                                            self.run_id)
             for log in logs_response["logs"]:
                 log_id = log["id"]
-                log_line_count = log["lineCount"]
+                log_line_count = log["lineCount"] if "lineCount" in log else 0
                 log_url = log["url"]
                 previous_line_count = logs[log_id] if log_id in logs else 0
                 if log_line_count > previous_line_count:
                     self._write_log_data(log_url, previous_line_count)
+                else:
+                    self._write_log_data(log_url, 0)
                 logs[log_id] = log_line_count
 
             # check pipeline status

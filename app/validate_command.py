@@ -35,10 +35,10 @@ class ValidateCommand(Command):
         file_abs_path = os.path.join(self.repo_path, self.file_path)
         state, finalYaml = pipelines_client.validate_pipeline(self.pipeline_id,
                                                               file_abs_path)
-        self.write_output(f"\nValidation result: {state}")
+        self.write_console_output(f"\nValidation result: {state}")
         with open(VALIDATED_YAML_FILENAME, 'w') as file:
             file.write(finalYaml)
-        self.write_output(f"\nWritten validated Yaml to {VALIDATED_YAML_FILENAME}")
+        self.write_console_output(f"\nWritten validated Yaml to {VALIDATED_YAML_FILENAME}")
         self.app.render_file(VALIDATED_YAML_FILENAME, "yaml")
 
     def handle_command(self):

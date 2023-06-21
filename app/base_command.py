@@ -19,5 +19,13 @@ class Command(ABC):
     def handle_command(command: str):
         pass
 
-    def write_output(self, msg):
-        self.app.post_message(TerminalUi.Output(msg))
+    def write_console_output(self, msg):
+        # self.app.post_message(TerminalUi.ConsoleMessage(msg))
+        # self.app.append_cmd_output(msg)
+        self.app.call_from_thread(self.app.append_cmd_output, msg)
+        # self.app.call_from_thread(self.app.post_message, TerminalUi.ConsoleMessage(msg))
+
+    def write_log_output(self, msg):
+        # self.app.post_message(TerminalUi.LogMessage(msg))
+        self.app.call_from_thread(self.app.append_log_output, msg)
+        # self.app.call_from_thread(self.app.post_message, TerminalUi.LogMessage(msg))

@@ -15,10 +15,21 @@ LOG_OUTPUT_CONTAINER = "log_output_container"
 class TerminalUi(App):
     CSS_PATH = "app.css"
 
-    class Output(Message):
+    class ConsoleMessage(Message):
         def __init__(self, output: str) -> None:
             self.output = output
             super().__init__()
+
+    class LogMessage(Message):
+        def __init__(self, output: str) -> None:
+            self.output = output
+            super().__init__()
+
+    def on_console_message(self, message: ConsoleMessage) -> None:
+        self.append_cmd_output(message.output)
+
+    def on_log_message(self, message: LogMessage) -> None:
+        self.append_log_output(message.output)
 
     def __init__(self):
         super().__init__()
@@ -62,9 +73,6 @@ class TerminalUi(App):
 
     def on_cmd(self):
         pass
-
-    def on_terminal_ui_output(self, message: Output) -> None:
-        self.append_cmd_output(message.output)
 
     def append_cmd_output(self, text: str):
         cmd_output = self.query_one(f"#{CMD_OUTPUT_ID}")
