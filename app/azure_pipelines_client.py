@@ -57,11 +57,11 @@ class AzurePipelinesClient(AzureDevOpsClient):
         signed_url = log_meta_data["signedContent"]["url"]
         response = requests.request("GET", signed_url)
         response.raise_for_status()
-        return response
+        return response.content.decode('utf-8')
 
     def get_run_state(self, pipeline_id, run_id):
         api_url = f"{self.org_url}/{self.project_name}/_apis/pipelines/{pipeline_id}/runs/{run_id}?api-version=7.0"
         response = self.send_api_request(api_url, "GET")
         state = response["state"]
-        result = response["result"]
+        result = response["result"] if "result" in response else ""
         return (state, result)

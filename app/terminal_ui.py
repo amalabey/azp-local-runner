@@ -50,7 +50,7 @@ class TerminalUi(App):
         cmd_input.focus()
 
     async def on_ready(self) -> None:
-        self.run_worker(self.on_ui_ready, exclusive=False)
+        self.run_worker(self.on_ui_ready, exclusive=True, group="cmd")
 
     def spawn_worker(self, callback_func):
         self.run_worker(callback_func, exclusive=False)

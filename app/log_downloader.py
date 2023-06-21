@@ -24,7 +24,7 @@ class LogDownloader:
                 log_id = log["id"]
                 log_line_count = log["lineCount"]
                 log_url = log["url"]
-                previous_line_count, _ = logs[log_id]
+                previous_line_count = logs[log_id] if log_id in logs else 0
                 if log_line_count > previous_line_count:
                     self._write_log_data(log_url, previous_line_count)
                 logs[log_id] = log_line_count
@@ -43,7 +43,7 @@ class LogDownloader:
                                                  downloaded_line_count)
         self.on_receive_log(new_contents)
 
-    def _get_text_after_line(text, line_number):
+    def _get_text_after_line(self, text, line_number):
         lines = text.splitlines()
         if line_number >= len(lines):
             return ''  # Line number exceeds the total number of lines

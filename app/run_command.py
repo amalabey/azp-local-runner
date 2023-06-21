@@ -9,6 +9,7 @@ from app.local_git_repo import LocalGitRepository
 from app.log_downloader import LogDownloader
 from app.pipeline_definition import PipelineDefinition
 from app.terminal_ui import TerminalUi
+from threading import Thread
 
 RUN_CMD_TEXT = "#run"
 EXIT_CMD_TEXT = "exit"
@@ -75,7 +76,7 @@ class RunCommand(Command):
         # Start pipeline logs downloader
         self.run_id = run_result["id"]
         self.pipelines_client = azure_pipelines_client
-        # self._start_log_viewer()
+        self._start_log_viewer()
         self._start_debug_console()
 
     def _start_debug_console(self):
@@ -92,8 +93,12 @@ class RunCommand(Command):
         log_downloader = LogDownloader(self.pipelines_client,
                                        self.pipeline_id,
                                        self.run_id)
-        log_downloader.on_receive_log = self.app.append_log_output
-        log_downloader.start()
+        log_downloader.on_receive_log = self.handle_log_received
+        thread = Thread(target=log_downloader.start)
+        thread.start()
+
+    def handle_log_received(self, log_contents):
+        self.app.call_from_thread(self.app.append_log_output, log_contents)
 
     def handle_response(self, response):
         self.app.append_cmd_output("\n")
