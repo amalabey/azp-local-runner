@@ -9,6 +9,7 @@ CMD_INPUT_ID = "cmd-input-text"
 CMD_OUTPUT_ID = "cmd-output-text"
 CMD_OUTPUT_CONTAINER = "cmd-output-container"
 LOG_OUTPUT_ID = "log-output-text"
+LOG_OUTPUT_CONTAINER = "log_output_container"
 
 
 class TerminalUi(App):
@@ -39,7 +40,7 @@ class TerminalUi(App):
                         cmd_input = Input(placeholder="", id=CMD_INPUT_ID)
                         cmd_input.action_submit = self.on_action_submit
                         yield cmd_input
-            with VerticalScroll(id="right-pane"):
+            with VerticalScroll(id=LOG_OUTPUT_CONTAINER):
                 with Header():
                     yield Label("Output")
                 yield Static("", id=LOG_OUTPUT_ID)
@@ -49,7 +50,10 @@ class TerminalUi(App):
         cmd_input.focus()
 
     async def on_ready(self) -> None:
-        self.run_worker(self.on_ui_ready, exclusive=True)
+        self.run_worker(self.on_ui_ready, exclusive=False)
+
+    def spawn_worker(self, callback_func):
+        self.run_worker(callback_func, exclusive=False)
 
     def on_action_submit(self):
         self.on_cmd()
@@ -71,6 +75,18 @@ class TerminalUi(App):
 
     def write_cmd_output(self, text: str):
         cmd_output = self.query_one(f"#{CMD_OUTPUT_ID}")
+        self.cmd_output_text = text
+        cmd_output.update(self.cmd_output_text)
+
+    def append_log_output(self, text: str):
+        log_output = self.query_one(f"#{LOG_OUTPUT_ID}")
+        self.cmd_output_text += text
+        log_output.update(self.cmd_output_text)
+        log_output_container = self.query_one(f"#{LOG_OUTPUT_CONTAINER}")
+        log_output_container.scroll_end(animate=False)
+
+    def write_log_output(self, text: str):
+        cmd_output = self.query_one(f"#{LOG_OUTPUT_ID}")
         self.cmd_output_text = text
         cmd_output.update(self.cmd_output_text)
 

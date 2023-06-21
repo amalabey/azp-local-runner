@@ -6,10 +6,12 @@ from app.base_command import Command
 from app.debug_console import DebugConsole
 from app.local_agent import LocalAgent
 from app.local_git_repo import LocalGitRepository
+from app.log_downloader import LogDownloader
 from app.pipeline_definition import PipelineDefinition
 from app.terminal_ui import TerminalUi
 
 RUN_CMD_TEXT = "#run"
+EXIT_CMD_TEXT = "exit"
 
 
 class RunCommand(Command):
@@ -67,9 +69,16 @@ class RunCommand(Command):
         azure_pipelines_client = AzurePipelinesClient(self.org_url, self.project_name,
                                                       self.personal_access_token)
         azure_pipelines_client.cancel_pending_jobs(ref_name)
-        azure_pipelines_client.run_pipeline(self.pipeline_id, ref_name)
+        run_result = azure_pipelines_client.run_pipeline(self.pipeline_id, ref_name)
         self.write_output("\nRunning pipeline")
 
+        # Start pipeline logs downloader
+        self.run_id = run_result["id"]
+        self.pipelines_client = azure_pipelines_client
+        # self._start_log_viewer()
+        self._start_debug_console()
+
+    def _start_debug_console(self):
         # Listen for a reverse shell as the debug console
         if self.debug:
             self.debug_console = DebugConsole(repel=False)
@@ -77,6 +86,14 @@ class RunCommand(Command):
             self.write_output("\nAwaiting connection to local debugger")
             self.debug_console.listen()
             self.write_output("\nConnected to debugger")
+
+    def _start_log_viewer(self):
+        self.app.write_log_output("Waiting for logs.....")
+        log_downloader = LogDownloader(self.pipelines_client,
+                                       self.pipeline_id,
+                                       self.run_id)
+        log_downloader.on_receive_log = self.app.append_log_output
+        log_downloader.start()
 
     def handle_response(self, response):
         self.app.append_cmd_output("\n")
@@ -86,6 +103,9 @@ class RunCommand(Command):
         cmd_text = self.app.get_cmd_text()
         if cmd_text == RUN_CMD_TEXT:
             self.execute()
+        elif cmd_text == EXIT_CMD_TEXT:
+            # self._start_log_viewer()
+            self._start_debug_console()
         elif self.debug_console:
             try:
                 self.debug_console.send_command(cmd_text)
