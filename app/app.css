@@ -11,17 +11,11 @@
     grid-size: 1;
     grid-columns: 1fr;
     grid-rows: 93% 7%;
-    background: $panel;
-    border: green;
-}
-
-#cmd-output-text {
-    background: $boost;
+    border: gray;
 }
 
 #cmd-input-container {
-    background: $boost;
-    border: solid green;
+    border: solid gray;
 }
 
 #cmd-bar {
@@ -42,6 +36,5 @@
     width: 100%;
     height: 100%;
     row-span: 2;
-    background: $panel;
-    border: green;
+    border: gray;
 }

@@ -42,7 +42,7 @@ class TerminalUi(App):
             with Container(id="left-pane"):
                 with Header():
                     yield Label("Console")
-                yield TextLog(id=CMD_OUTPUT_ID)
+                yield TextLog(id=CMD_OUTPUT_ID, highlight=True, markup=True)
                 with Container(id="cmd-input-container"):
                     with Horizontal(id="cmd-bar"):
                         yield Label(">", id="cmd-label-text")
@@ -52,7 +52,7 @@ class TerminalUi(App):
             with Container(id=LOG_OUTPUT_CONTAINER):
                 with Header():
                     yield Label("Output")
-                yield TextLog(id=LOG_OUTPUT_ID)
+                yield TextLog(id=LOG_OUTPUT_ID, highlight=True, markup=True)
 
     async def on_mount(self) -> None:
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
