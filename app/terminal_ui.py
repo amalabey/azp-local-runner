@@ -1,13 +1,12 @@
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, VerticalScroll
-from textual.widgets import Header, Static, Label
+from textual.containers import Container, Horizontal
+from textual.widgets import Header, Label, TextLog
 from textual.widgets import Input
 from rich.syntax import Syntax
 from textual.message import Message
 
 CMD_INPUT_ID = "cmd-input-text"
 CMD_OUTPUT_ID = "cmd-output-text"
-CMD_OUTPUT_CONTAINER = "cmd-output-container"
 LOG_OUTPUT_ID = "log-output-text"
 LOG_OUTPUT_CONTAINER = "log_output_container"
 
@@ -43,18 +42,17 @@ class TerminalUi(App):
             with Container(id="left-pane"):
                 with Header():
                     yield Label("Console")
-                with VerticalScroll(id=CMD_OUTPUT_CONTAINER):
-                    yield Static("", id=CMD_OUTPUT_ID)
+                yield TextLog(id=CMD_OUTPUT_ID)
                 with Container(id="cmd-input-container"):
                     with Horizontal(id="cmd-bar"):
                         yield Label(">", id="cmd-label-text")
                         cmd_input = Input(placeholder="", id=CMD_INPUT_ID)
                         cmd_input.action_submit = self.on_action_submit
                         yield cmd_input
-            with VerticalScroll(id=LOG_OUTPUT_CONTAINER):
+            with Container(id=LOG_OUTPUT_CONTAINER):
                 with Header():
                     yield Label("Output")
-                yield Static("", id=LOG_OUTPUT_ID)
+                yield TextLog(id=LOG_OUTPUT_ID)
 
     async def on_mount(self) -> None:
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
@@ -76,27 +74,21 @@ class TerminalUi(App):
 
     def append_cmd_output(self, text: str):
         cmd_output = self.query_one(f"#{CMD_OUTPUT_ID}")
-        self.cmd_output_text += text
-        cmd_output.update(self.cmd_output_text)
-        cmd_output_container = self.query_one(f"#{CMD_OUTPUT_CONTAINER}")
-        cmd_output_container.scroll_end(animate=False)
+        cmd_output.write(text)
 
     def write_cmd_output(self, text: str):
         cmd_output = self.query_one(f"#{CMD_OUTPUT_ID}")
-        self.cmd_output_text = text
-        cmd_output.update(self.cmd_output_text)
+        cmd_output.clear()
+        cmd_output.write(text)
 
     def append_log_output(self, text: str):
         log_output = self.query_one(f"#{LOG_OUTPUT_ID}")
-        self.cmd_output_text += text
-        log_output.update(self.cmd_output_text)
-        log_output_container = self.query_one(f"#{LOG_OUTPUT_CONTAINER}")
-        log_output_container.scroll_end(animate=False)
+        log_output.write(text)
 
     def write_log_output(self, text: str):
         cmd_output = self.query_one(f"#{LOG_OUTPUT_ID}")
-        self.cmd_output_text = text
-        cmd_output.update(self.cmd_output_text)
+        cmd_output.clear()
+        cmd_output.write(text)
 
     def get_cmd_text(self):
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
