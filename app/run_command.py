@@ -12,6 +12,8 @@ from app.terminal_ui import TerminalUi
 from threading import Thread
 
 RUN_CMD_TEXT = "#run"
+UPGRADE_CMD_TEXT = "#upgrade"
+UPGRADE_CMD_SCRIPT = "python3 -c 'import pty; pty.spawn(\"/bin/bash\")'"
 EXIT_CMD_TEXT = "exit"
 
 
@@ -32,6 +34,7 @@ class RunCommand(Command):
         self.personal_access_token = personal_access_token
         self.repo_path = repo_path
         self.file_path = file_path
+        self.shell_upgraded = False
         self.debug = debug
         self.debug_console = None
 
@@ -118,9 +121,15 @@ class RunCommand(Command):
         cmd_text = self.app.pop_cmd_text()
         if cmd_text == RUN_CMD_TEXT:
             self.execute()
+        elif cmd_text == UPGRADE_CMD_TEXT:
+            self.write_console_output("Upgrading shell...")
+            self.debug_console.send_command(UPGRADE_CMD_SCRIPT)
         elif cmd_text == EXIT_CMD_TEXT:
             self.write_console_output("Awaiting connection to local agent...")
             self.debug_console.send_command(cmd_text)
+            if self.shell_upgraded:  # If the shell is upgraded using pty we need to exit twice
+                self.debug_console.send_command(cmd_text)
+            self.shell_upgraded = False
         elif self.debug_console:
             try:
                 self.debug_console.send_command(cmd_text)
