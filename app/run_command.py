@@ -105,11 +105,11 @@ class RunCommand(Command):
         self.app.append_cmd_output(response)
 
     def handle_command(self):
-        cmd_text = self.app.get_cmd_text()
+        cmd_text = self.app.pop_cmd_text()
         if cmd_text == RUN_CMD_TEXT:
             self.execute()
         elif cmd_text == EXIT_CMD_TEXT:
-            # self._start_log_viewer()
+            self.debug_console.send_command(cmd_text)
             self._start_debug_console()
         elif self.debug_console:
             try:

@@ -42,7 +42,7 @@ class TerminalUi(App):
             with Container(id="left-pane"):
                 with Header():
                     yield Label("Console")
-                yield TextLog(id=CMD_OUTPUT_ID, highlight=True, markup=True)
+                yield TextLog(id=CMD_OUTPUT_ID, highlight=True, markup=False)
                 with Container(id="cmd-input-container"):
                     with Horizontal(id="cmd-bar"):
                         yield Label(">", id="cmd-label-text")
@@ -52,7 +52,7 @@ class TerminalUi(App):
             with Container(id=LOG_OUTPUT_CONTAINER):
                 with Header():
                     yield Label("Output")
-                yield TextLog(id=LOG_OUTPUT_ID, highlight=True, markup=True)
+                yield TextLog(id=LOG_OUTPUT_ID, highlight=True, markup=False)
 
     async def on_mount(self) -> None:
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
@@ -61,13 +61,8 @@ class TerminalUi(App):
     async def on_ready(self) -> None:
         self.run_worker(self.on_ui_ready, exclusive=True, group="cmd")
 
-    def spawn_worker(self, callback_func):
-        self.run_worker(callback_func, exclusive=False)
-
-    def on_action_submit(self):
-        self.on_cmd()
-        cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
-        cmd_input.value = ""
+    async def on_action_submit(self):
+        self.run_worker(self.on_cmd, exclusive=True)
 
     def on_cmd(self):
         pass
@@ -90,9 +85,11 @@ class TerminalUi(App):
         cmd_output.clear()
         cmd_output.write(text)
 
-    def get_cmd_text(self):
+    def pop_cmd_text(self):
         cmd_input = self.query_one(f"#{CMD_INPUT_ID}")
-        return cmd_input.value
+        cmd_text = cmd_input.value
+        cmd_input.value = ""
+        return cmd_text
 
     def on_ui_ready(self):
         pass
