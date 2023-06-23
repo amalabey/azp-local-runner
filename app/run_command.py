@@ -48,7 +48,7 @@ class RunCommand(Command):
         local_agent = LocalAgent(self.org_url, self.personal_access_token,
                                  identifier)
         local_agent.start()
-        self.write_console_output("\nLocal agent started")
+        self.write_console_output("Local agent started")
 
         # Recreate the temp branch
         ref_name, object_id = self._recreate_temp_branch()
@@ -64,14 +64,14 @@ class RunCommand(Command):
                                               self.personal_access_token)
         azure_repos_client.update_remote_file(ref_name, object_id, self.file_path,
                                               yaml_content)
-        self.write_console_output("\nUpdated yaml in temporary remote branch")
+        self.write_console_output("Updated yaml in temporary remote branch")
 
         # Run the pipeline
         azure_pipelines_client = AzurePipelinesClient(self.org_url, self.project_name,
                                                       self.personal_access_token)
         azure_pipelines_client.cancel_pending_jobs(ref_name)
         run_result = azure_pipelines_client.run_pipeline(self.pipeline_id, ref_name)
-        self.write_console_output("\nRunning pipeline")
+        self.write_console_output("Running pipeline")
 
         # Start pipeline logs downloader
         self.run_id = run_result["id"]
@@ -82,11 +82,10 @@ class RunCommand(Command):
     def _start_debug_console(self):
         # Listen for a reverse shell as the debug console
         if self.debug:
-            self.debug_console = DebugConsole(repel=False)
-            self.debug_console.on_response = self.handle_response
-            self.write_console_output("\nAwaiting connection to local debugger")
+            self.debug_console = DebugConsole()
+            self.debug_console.on_output = self.handle_response
+            self.write_console_output("Awaiting connection to local agent...")
             self.debug_console.listen()
-            self.write_console_output("\nConnected to debugger")
 
     def _start_log_viewer(self):
         self.app.write_log_output("Waiting for logs.....")
@@ -109,8 +108,8 @@ class RunCommand(Command):
         if cmd_text == RUN_CMD_TEXT:
             self.execute()
         elif cmd_text == EXIT_CMD_TEXT:
+            self.write_console_output("Awaiting connection to local agent...")
             self.debug_console.send_command(cmd_text)
-            self._start_debug_console()
         elif self.debug_console:
             try:
                 self.debug_console.send_command(cmd_text)
