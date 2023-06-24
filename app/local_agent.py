@@ -48,6 +48,7 @@ class LocalAgent():
                                     },
                                   detach=True,
                                   name=self.container_name,
+                                  ports= {7073: 7073},
                                   environment=agent_params)
         else:
             container = client.containers.get(self.container_name)

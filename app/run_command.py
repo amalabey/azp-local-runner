@@ -15,6 +15,8 @@ RUN_CMD_TEXT = "#run"
 UPGRADE_CMD_TEXT = "#upgrade"
 UPGRADE_CMD_SCRIPT = "python3 -c 'import pty; pty.spawn(\"/bin/bash\")'"
 EXIT_CMD_TEXT = "exit"
+SERVE_CMD_TEXT = "#serve"
+SERVE_CMD_SCRIPT = "python3 -m http.server 7073 &"
 
 
 class RunCommand(Command):
@@ -126,6 +128,10 @@ class RunCommand(Command):
         elif cmd_text == UPGRADE_CMD_TEXT:
             self.write_console_output("Upgrading shell...")
             self.debug_console.send_command(UPGRADE_CMD_SCRIPT)
+        elif cmd_text == SERVE_CMD_TEXT:
+            self.write_console_output("Running http server on 7073...")
+            self.write_console_output("Access: http://localhost:7073 to browse files")
+            self.debug_console.send_command(SERVE_CMD_SCRIPT)
         elif cmd_text == EXIT_CMD_TEXT:
             self.write_console_output("Awaiting connection to local agent...")
             self.debug_console.send_command(cmd_text)
