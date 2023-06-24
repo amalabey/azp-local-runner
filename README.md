@@ -21,7 +21,7 @@ It runs an Azure Pipelines [self-hosted docker agent](https://learn.microsoft.co
 # Getting Started
 You can install the tool by running below:
 ```
-pip install --index-url https://test.pypi.org/amalabey azplocal
+pip3 install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple azplocal
 ```
 You need below before you can start using the tool:
 * You should be running docker and logged in so that you can pull container images from [Docker Hub](https://hub.docker.com/repository/docker/amalabey/azp-local-runner/general).
