@@ -1,0 +1,40 @@
+#app-grid {
+    layout: grid;
+    grid-size: 2;  /* two columns */
+    grid-columns: 1fr;
+    grid-rows: 1fr;
+}
+
+#left-pane {
+    height: 100%;
+    layout: grid;
+    grid-size: 1;
+    grid-columns: 1fr;
+    grid-rows: 93% 7%;
+    border: gray;
+}
+
+#cmd-input-container {
+    border: solid gray;
+}
+
+#cmd-bar {
+    content-align: center middle;
+}
+
+#cmd-label-text {
+    width: 1fr;
+    height: 100%;
+    content-align: center middle;
+}
+
+#cmd-input-text {
+    width: 40fr;
+}
+
+#log_output_container {
+    width: 100%;
+    height: 100%;
+    row-span: 2;
+    border: gray;
+}

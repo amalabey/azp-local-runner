@@ -28,8 +28,9 @@ def validate(org, project, token, repo_path, file, id):
 @click.option('-r', '--repo_path', type=str, required=True, help='Path to local repository clone')
 @click.option('-f', '--file', type=str, required=True, help='Patht to yaml file relative to the repository')
 @click.option('-i', '--id', type=str, required=True, help='Pipeline definitionId from the url to Pipeline')
+@click.option('-a', '--image', type=str, required=False, help='Agent image name to run the local agent')
 @click.option('-d', '--debug', is_flag=True, help='Pipeline definitionId from the url to Pipeline')
-def run(org, project, token, repo_path, file, id, debug):
+def run(org, project, token, repo_path, file, id, image, debug):
     click.echo(f"Running azure pipeline: {file} with debug={debug}")
-    run_pipeline(org, project, id, token, repo_path, file, debug)
+    run_pipeline(org, project, id, token, repo_path, file, debug, image)
     click.echo("Done")

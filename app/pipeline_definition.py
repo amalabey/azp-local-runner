@@ -10,7 +10,28 @@ class PipelineDefinition(YAML):
     def __init__(self, file_path):
         self.file_path = file_path
 
-    def annotate_yaml(self, debug_flag, agent_name):
+    def get_sub_templates(self):
+        yaml = StringExportableYaml()
+        with open(self.file_path, 'r') as file:
+            yaml_file_contents = file.read()
+            yaml_data = yaml.load(yaml_file_contents)
+            return self._find_recursive(yaml_data, "template")
+
+    def _find_recursive(self, yaml, search_key):
+        found_values = list()
+        if isinstance(yaml, list):
+            for value in yaml:
+                if isinstance(value, dict) or isinstance(value, list):
+                    found_values.extend(self._find_recursive(value, search_key))
+        elif isinstance(yaml, dict):
+            for key, value in yaml.items():
+                if key == search_key:
+                    found_values.append(value)
+                if isinstance(value, dict) or isinstance(value, list):
+                    found_values.extend(self._find_recursive(value, search_key))
+        return found_values
+
+    def annotate_yaml(self, debug_flag, agent_name, pool_name):
         yaml = StringExportableYaml()
         with open(self.file_path, 'r') as file:
             yaml_file_contents = file.read()
@@ -19,7 +40,7 @@ class PipelineDefinition(YAML):
                 yaml_file_contents = self._insert_breakpoints(yaml_file_contents)
 
             yaml_data = yaml.load(yaml_file_contents)
-            yaml_data = self._set_agent(agent_name, yaml_data)
+            yaml_data = self._set_agent(agent_name, pool_name, yaml_data)
             return yaml.dump(yaml_data)
 
     def _insert_breakpoints(self, yaml_text,
@@ -37,12 +58,13 @@ class PipelineDefinition(YAML):
         replaced_text = '\n'.join(replaced_lines)
         return replaced_text
 
-    def _set_agent(self, agent_name, yaml_data):
+    def _set_agent(self, agent_name, pool_name, yaml_data):
         # Set pipeline agent to point to local agent
-        yaml_data["pool"] = {
-            "name": "Default",
-            "demands": [f"agent.name -equals {agent_name}"]
-        }
+        if "pool" in yaml_data:
+            yaml_data["pool"] = {
+                "name": pool_name,
+                "demands": [f"agent.name -equals {agent_name}"]
+            }
         return yaml_data
 
 
