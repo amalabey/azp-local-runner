@@ -38,6 +38,21 @@ class AzurePipelinesClient(AzureDevOpsClient):
             finalYaml = response["finalYaml"]
             return (state, finalYaml)
 
+    def register_agent_pool(self, pool_name):
+        # check if pool already exists
+        get_pools_api_url = f"{self.org_url}/_apis/distributedtask/pools?api-version=7.0"
+        agent_pools = self.send_api_request(get_pools_api_url, "GET")
+        existing_pool = next((pool for pool in agent_pools["value"] if pool['name'] == pool_name), None)
+        if not existing_pool:
+            # register pool if it does not exist
+            payload = json.dumps({
+                "name": pool_name,
+                "autoProvision": True,
+                "agentCloudId": ""
+            })
+            register_pool_api_url = f"{self.org_url}/_apis/distributedtask/pools?api-version=7.0"
+            self.send_api_request(register_pool_api_url, "POST", data=payload)
+
     def cancel_pending_jobs(self, remoteBranch):
         get_jobs_api_url = f"{self.org_url}/{self.project_name}/_apis/build/builds?statusFilter=notStarted,inProgress,postponed&branchName={remoteBranch}&api-version=7.0"
         pending_jobs = self.send_api_request(get_jobs_api_url, "GET")

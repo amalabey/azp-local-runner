@@ -52,7 +52,8 @@ class RunCommand(Command):
         identifier = hostname.replace(" ", "").lower()
 
         # Start local agent container
-        local_agent = LocalAgent(self.org_url, self.personal_access_token,
+        local_agent = LocalAgent(self.org_url, self.project_name,
+                                 self.personal_access_token,
                                  identifier, self.agent_image_name)
         local_agent.start()
         self.write_console_output("Local agent started")
@@ -66,7 +67,8 @@ class RunCommand(Command):
         azure_repos_client = AzureReposClient(self.org_url, self.project_name,
                                               self.personal_access_token)
         yaml_content = pipeline_defition.annotate_yaml(self.debug,
-                                                       local_agent.get_agent_name())
+                                                       local_agent.get_agent_name(),
+                                                       local_agent.get_agent_pool_name())
         res = azure_repos_client.update_remote_file(ref_name, object_id, self.file_path,
                                               yaml_content)
         new_obj_id = res["refUpdates"][0]["newObjectId"]
@@ -77,7 +79,8 @@ class RunCommand(Command):
             template_abs_path = os.path.join(self.repo_path, template)
             template_definition = PipelineDefinition(template_abs_path)
             tmpl_content = template_definition.annotate_yaml(self.debug,
-                                              local_agent.get_agent_name())
+                                              local_agent.get_agent_name(),
+                                              local_agent.get_agent_pool_name())
             tmpl_res = azure_repos_client.update_remote_file(ref_name, new_obj_id,
                                                   template, tmpl_content)
             new_obj_id = tmpl_res["refUpdates"][0]["newObjectId"]
