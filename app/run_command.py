@@ -26,7 +26,8 @@ class RunCommand(Command):
                  personal_access_token: str,
                  repo_path: str,
                  file_path: str,
-                 debug: bool) -> None:
+                 debug: bool,
+                 agent_image_name: str) -> None:
         super().__init__(app)
         self.org_url = org_url
         self.project_name = project_name
@@ -37,6 +38,7 @@ class RunCommand(Command):
         self.shell_upgraded = False
         self.debug = debug
         self.debug_console = None
+        self.agent_image_name = agent_image_name
 
     def start(self) -> None:
         self.app.on_ui_ready = self.execute
@@ -49,7 +51,7 @@ class RunCommand(Command):
 
         # Start local agent container
         local_agent = LocalAgent(self.org_url, self.personal_access_token,
-                                 identifier)
+                                 identifier, self.agent_image_name)
         local_agent.start()
         self.write_console_output("Local agent started")
 

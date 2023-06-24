@@ -1,12 +1,11 @@
 import docker
 
-DEFAULT_AGENT_IMAGE_NAME = "amalabey/azp-local-runner"
 AGENT_VOLUME_NAME = "azp-work-volume"
 
 
 class LocalAgent():
     def __init__(self, org_url, personal_access_token, name,
-                 image_name=DEFAULT_AGENT_IMAGE_NAME):
+                 image_name):
         self.org_url = org_url
         self.personal_access_token = personal_access_token
         self.image_name = image_name
