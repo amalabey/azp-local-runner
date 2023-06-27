@@ -33,15 +33,19 @@ class ValidateCommand(Command):
         pipelines_client = AzurePipelinesClient(self.org_url, self.project_name,
                                                 self.personal_access_token)
         file_abs_path = os.path.join(self.repo_path, self.file_path)
-        state, finalYaml = pipelines_client.validate_pipeline(self.pipeline_id,
+        state, msg, finalYaml = pipelines_client.validate_pipeline(self.pipeline_id,
                                                               file_abs_path)
         self.write_console_output(f"\nValidation result: {state}")
-        with open(VALIDATED_YAML_FILENAME, 'w') as file:
-            file.write(finalYaml)
-        self.write_console_output(f"\nWritten validated Yaml to {VALIDATED_YAML_FILENAME}")
-        self.app.render_file(VALIDATED_YAML_FILENAME, "yaml")
+        if msg:
+            self.write_console_output(f"\nMessage: {msg=}")
+
+        if finalYaml:
+            with open(VALIDATED_YAML_FILENAME, 'w') as file:
+                file.write(finalYaml)
+            self.write_console_output(f"\nWritten validated Yaml to {VALIDATED_YAML_FILENAME}")
+            self.app.render_file(VALIDATED_YAML_FILENAME, "yaml")
 
     def handle_command(self):
-        cmd_text = self.app.get_cmd_text()
+        cmd_text = self.app.pop_cmd_text()
         if cmd_text == VALIDATE_CMD_TEXT:
             self.execute()
