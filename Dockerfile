@@ -14,6 +14,12 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommend
     software-properties-common
 
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+RUN apt-get update
+RUN apt-get install wget -y
+RUN apt-get install unzip -y
+RUN apt-get install default-jdk default-jre -y
+RUN apt-get install sudo -y
+RUN apt-get install python3-pip -y
 
 # Can be 'linux-x64', 'linux-arm64', 'linux-arm', 'rhel.6-x64'.
 ENV TARGETARCH=linux-x64

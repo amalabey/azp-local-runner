@@ -33,10 +33,12 @@ class AzurePipelinesClient(AzureDevOpsClient):
                 "previewRun": True,
                 "yamlOverride": file_content
             })
-            response = self.send_api_request(run_api_url, "POST", payload)
-            state = response["state"]
-            finalYaml = response["finalYaml"]
-            return (state, finalYaml)
+            response = self.send_api_request(run_api_url, "POST", payload,
+                                             raiseOnErr=False)
+            msg = response["message"] if "message" in response else None
+            state = response["state"] if "state" in response else "Failed"
+            finalYaml = response["finalYaml"] if "finalYaml" in response else None
+            return (state, msg, finalYaml)
 
     def register_agent_pool(self, pool_name):
         # check if pool already exists
