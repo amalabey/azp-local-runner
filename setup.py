@@ -6,7 +6,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name = 'azplocal',
-    version = '0.0.3',
+    version = '0.0.5',
     author = 'Amal Abey',
     author_email = 'amalabey@gmail.com',
     license = 'MIT',
@@ -22,7 +22,8 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Operating System :: OS Independent",
     ],
-    package_data={'css': ['app/app.css']},
+    include_package_data=True,
+    package_data={'': ['app/*.css']},
     entry_points = '''
         [console_scripts]
         azplocal=azplocal_tool:cli
