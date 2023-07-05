@@ -46,4 +46,4 @@ The Debug Shell also supports several special commands as listed below:
 - `#serve`: Starts a web server on http://localhost:7073, allowing you to browse/access the agent file system
 
 ### Using Custom Agent Image
-If your pipeline requires, additional/special software to be available on the agent, you can take the Dockerfile in this repository and customise it to include any additional software. Then you can build a Docker image using `docker build . -t <your-image-name>:latest`. When running the pipeline, you can pass `-a` parameter to specify your image name.]
+If your pipeline requires, additional/special software to be available on the agent, you can take the Dockerfile in this repository and customise it to include any additional software. Then you can build a Docker image using `docker build . --platform linux/amd64 -t <your-image-name>:latest`. When running the pipeline, you can pass `-a` parameter to specify your image name.]
