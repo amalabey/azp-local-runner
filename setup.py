@@ -6,7 +6,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name = 'azplocal',
-    version = '0.0.5',
+    version = '0.0.6',
     author = 'Amal Abey',
     author_email = 'amalabey@gmail.com',
     license = 'MIT',

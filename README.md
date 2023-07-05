@@ -47,3 +47,15 @@ The Debug Shell also supports several special commands as listed below:
 
 ### Using Custom Agent Image
 If your pipeline requires, additional/special software to be available on the agent, you can take the Dockerfile in this repository and customise it to include any additional software. Then you can build a Docker image using `docker build . --platform linux/amd64 -t <your-image-name>:latest`. When running the pipeline, you can pass `-a` parameter to specify your image name.]
+
+## Build CLI tool
+Below are the steps to build the CLI tool:
+```
+python3 -m setup.py sdist bdist_wheel
+```
+
+Optionally, to upload to python package repository (https://test.pypi.org/):
+```
+twine upload --repository testpypi --skip-existing dist/*
+```
+*Note*: Use "__token__" as the username and the API key as the password.
