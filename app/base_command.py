@@ -19,8 +19,14 @@ class Command(ABC):
     def handle_command(command: str):
         pass
 
-    def write_console_output(self, msg):
+    def append_console_output(self, msg):
         self.app.append_cmd_output(msg)
 
-    def write_log_output(self, msg):
+    def write_console_output(self, msg):
+        self.app.write_cmd_output(msg)
+
+    def append_log_output(self, msg):
         self.app.append_log_output(msg)
+
+    def write_log_output(self, msg):
+        self.app.write_log_output(msg)

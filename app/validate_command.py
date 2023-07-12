@@ -35,14 +35,16 @@ class ValidateCommand(Command):
         file_abs_path = os.path.join(self.repo_path, self.file_path)
         state, msg, finalYaml = pipelines_client.validate_pipeline(self.pipeline_id,
                                                               file_abs_path)
-        self.write_console_output(f"\nValidation result: {state}")
         if msg:
-            self.write_console_output(f"\nMessage: {msg=}")
+            unescaped_msg = msg.encode('utf-8').decode('unicode_escape')
+            self.write_console_output(f"\nValidation Result: \n{unescaped_msg}")
+        else:
+            self.write_console_output("\nValidation Result: Pipeline valid")
 
         if finalYaml:
             with open(VALIDATED_YAML_FILENAME, 'w') as file:
                 file.write(finalYaml)
-            self.write_console_output(f"\nWritten validated Yaml to {VALIDATED_YAML_FILENAME}")
+            self.append_console_output(f"\nWritten validated Yaml to {VALIDATED_YAML_FILENAME}")
             self.app.render_file(VALIDATED_YAML_FILENAME, "yaml")
 
     def handle_command(self):
