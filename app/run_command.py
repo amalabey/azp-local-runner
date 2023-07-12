@@ -56,7 +56,7 @@ class RunCommand(Command):
                                  self.personal_access_token,
                                  identifier, self.agent_image_name)
         local_agent.start()
-        self.write_console_output("Local agent started")
+        self.append_console_output("Local agent started")
 
         # Recreate the temp branch
         ref_name, object_id = self._recreate_temp_branch()
@@ -85,14 +85,14 @@ class RunCommand(Command):
                                                   template, tmpl_content)
             new_obj_id = tmpl_res["refUpdates"][0]["newObjectId"]
 
-        self.write_console_output("Updated yaml in temporary remote branch")
+        self.append_console_output("Updated yaml in temporary remote branch")
 
         # Run the pipeline
         azure_pipelines_client = AzurePipelinesClient(self.org_url, self.project_name,
                                                       self.personal_access_token)
         azure_pipelines_client.cancel_pending_jobs(ref_name)
         run_result = azure_pipelines_client.run_pipeline(self.pipeline_id, ref_name)
-        self.write_console_output("Running pipeline")
+        self.append_console_output("Running pipeline")
 
         # Start pipeline logs downloader
         self.run_id = run_result["id"]
@@ -105,7 +105,7 @@ class RunCommand(Command):
         if self.debug:
             self.debug_console = DebugConsole()
             self.debug_console.on_output = self.handle_response
-            self.write_console_output("Awaiting connection to local agent...")
+            self.append_console_output("Awaiting connection to local agent...")
             self.debug_console.listen()
 
     def _start_log_viewer(self):
@@ -118,7 +118,7 @@ class RunCommand(Command):
         thread.start()
 
     def handle_log_received(self, log_contents):
-        self.write_log_output(log_contents)
+        self.append_log_output(log_contents)
 
     def handle_response(self, response):
         self.app.append_cmd_output("\n")
@@ -129,14 +129,14 @@ class RunCommand(Command):
         if cmd_text == RUN_CMD_TEXT:
             self.execute()
         elif cmd_text == UPGRADE_CMD_TEXT:
-            self.write_console_output("Upgrading shell...")
+            self.append_console_output("Upgrading shell...")
             self.debug_console.send_command(UPGRADE_CMD_SCRIPT)
         elif cmd_text == SERVE_CMD_TEXT:
-            self.write_console_output("Running http server on 7073...")
-            self.write_console_output("Access: http://localhost:7073 to browse files")
+            self.append_console_output("Running http server on 7073...")
+            self.append_console_output("Access: http://localhost:7073 to browse files")
             self.debug_console.send_command(SERVE_CMD_SCRIPT)
         elif cmd_text == EXIT_CMD_TEXT:
-            self.write_console_output("Awaiting connection to local agent...")
+            self.append_console_output("Awaiting connection to local agent...")
             self.debug_console.send_command(cmd_text)
             if self.shell_upgraded:  # If the shell is upgraded using pty we need to exit twice
                 self.debug_console.send_command(cmd_text)
@@ -145,8 +145,8 @@ class RunCommand(Command):
             try:
                 self.debug_console.send_command(cmd_text)
             except Exception as e:
-                self.write_console_output(str(e))
-                self.write_console_output("\n")
+                self.append_console_output(str(e))
+                self.append_console_output("\n")
 
     def _recreate_temp_branch(self):
         local_git_repo = LocalGitRepository(self.repo_path)
