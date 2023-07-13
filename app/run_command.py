@@ -53,33 +53,9 @@ class RunCommand(AzureDevOpsBaseCommand):
         local_agent.start()
         self.append_console_output("Local agent started")
 
-        # Recreate the temp branch
-        ref_name, object_id = self._recreate_temp_branch()
-
-        # Manipulate pipeline yaml to point to local agent and add breakpoints
-        file_abs_path = os.path.join(self.repo_path, self.file_path)
-        pipeline_defition = PipelineDefinition(file_abs_path)
-        azure_repos_client = AzureReposClient(self.org_url, self.project_name,
-                                              self.personal_access_token)
-        yaml_content = pipeline_defition.annotate_yaml(self.debug,
-                                                       local_agent.get_agent_name(),
-                                                       local_agent.get_agent_pool_name())
-        res = azure_repos_client.update_remote_file(ref_name, object_id, self.file_path,
-                                              yaml_content)
-        new_obj_id = res["refUpdates"][0]["newObjectId"]
-
-        # Update sub-templates if used
-        sub_templates = pipeline_defition.get_sub_templates()
-        for template in sub_templates:
-            template_abs_path = os.path.join(self.repo_path, template)
-            template_definition = PipelineDefinition(template_abs_path)
-            tmpl_content = template_definition.annotate_yaml(self.debug,
-                                              local_agent.get_agent_name(),
-                                              local_agent.get_agent_pool_name())
-            tmpl_res = azure_repos_client.update_remote_file(ref_name, new_obj_id,
-                                                  template, tmpl_content)
-            new_obj_id = tmpl_res["refUpdates"][0]["newObjectId"]
-
+        ref_name = self.update_remote_template(self.debug,
+                                    local_agent.get_agent_name(),
+                                    local_agent.get_agent_pool_name())
         self.write_console_output("Updated yaml in temporary remote branch")
 
         # Run the pipeline
