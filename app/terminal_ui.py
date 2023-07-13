@@ -97,8 +97,9 @@ class TerminalUi(App):
     def render_file(self, file_path, file_type):
         with open(file_path, "rt") as code_file:
             syntax = Syntax(code_file.read(), file_type, line_numbers=True)
-            log_output = self.query_one(f"#{LOG_OUTPUT_ID}")
-            log_output.update(syntax)
+            cmd_output = self.query_one(f"#{LOG_OUTPUT_ID}")
+            cmd_output.clear()
+            cmd_output.write(syntax)
 
 
 if __name__ == "__main__":

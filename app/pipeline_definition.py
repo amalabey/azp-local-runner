@@ -31,7 +31,7 @@ class PipelineDefinition(YAML):
                     found_values.extend(self._find_recursive(value, search_key))
         return found_values
 
-    def annotate_yaml(self, debug_flag, agent_name, pool_name):
+    def annotate_yaml(self, debug_flag, agent_name=None, pool_name=None):
         yaml = StringExportableYaml()
         with open(self.file_path, 'r') as file:
             yaml_file_contents = file.read()
@@ -40,7 +40,8 @@ class PipelineDefinition(YAML):
                 yaml_file_contents = self._insert_breakpoints(yaml_file_contents)
 
             yaml_data = yaml.load(yaml_file_contents)
-            yaml_data = self._set_agent(agent_name, pool_name, yaml_data)
+            if (agent_name is not None and pool_name is not None):
+                yaml_data = self._set_agent(agent_name, pool_name, yaml_data)
             return yaml.dump(yaml_data)
 
     def _insert_breakpoints(self, yaml_text,

@@ -24,12 +24,19 @@ class AzurePipelinesClient(AzureDevOpsClient):
         print(response)
         return response
 
-    def validate_pipeline(self, pipeline_id, file_path):
+    def validate_pipeline(self, pipeline_id, file_path, ref_name):
         run_api_url = f"{self.org_url}/{self.project_name}/_apis/pipelines/{pipeline_id}/runs?api-version=7.0"
 
         with open(file_path, 'r') as file:
             file_content = file.read()
             payload = json.dumps({
+                "resources": {
+                    "repositories": {
+                        "self": {
+                            "refName": ref_name
+                        }
+                    }
+                },
                 "previewRun": True,
                 "yamlOverride": file_content
             })

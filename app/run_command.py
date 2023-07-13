@@ -2,7 +2,7 @@ import os
 import socket
 from app.azure_pipelines_client import AzurePipelinesClient
 from app.azure_repos_client import AzureReposClient
-from app.base_command import Command
+from app.azure_devops_base_command import AzureDevOpsBaseCommand
 from app.debug_console import DebugConsole
 from app.local_agent import LocalAgent
 from app.local_git_repo import LocalGitRepository
@@ -19,7 +19,7 @@ SERVE_CMD_TEXT = "#serve"
 SERVE_CMD_SCRIPT = "python3 -m http.server 7073 &"
 
 
-class RunCommand(Command):
+class RunCommand(AzureDevOpsBaseCommand):
     def __init__(self,
                  app: TerminalUi,
                  org_url: str,
@@ -30,13 +30,8 @@ class RunCommand(Command):
                  file_path: str,
                  debug: bool,
                  agent_image_name: str) -> None:
-        super().__init__(app)
-        self.org_url = org_url
-        self.project_name = project_name
-        self.pipeline_id = pipeline_id
-        self.personal_access_token = personal_access_token
-        self.repo_path = repo_path
-        self.file_path = file_path
+        super().__init__(app, org_url, project_name, personal_access_token,
+                         repo_path, file_path, pipeline_id)
         self.shell_upgraded = False
         self.debug = debug
         self.debug_console = None
@@ -58,33 +53,9 @@ class RunCommand(Command):
         local_agent.start()
         self.write_console_output("Local agent started")
 
-        # Recreate the temp branch
-        ref_name, object_id = self._recreate_temp_branch()
-
-        # Manipulate pipeline yaml to point to local agent and add breakpoints
-        file_abs_path = os.path.join(self.repo_path, self.file_path)
-        pipeline_defition = PipelineDefinition(file_abs_path)
-        azure_repos_client = AzureReposClient(self.org_url, self.project_name,
-                                              self.personal_access_token)
-        yaml_content = pipeline_defition.annotate_yaml(self.debug,
-                                                       local_agent.get_agent_name(),
-                                                       local_agent.get_agent_pool_name())
-        res = azure_repos_client.update_remote_file(ref_name, object_id, self.file_path,
-                                              yaml_content)
-        new_obj_id = res["refUpdates"][0]["newObjectId"]
-
-        # Update sub-templates if used
-        sub_templates = pipeline_defition.get_sub_templates()
-        for template in sub_templates:
-            template_abs_path = os.path.join(self.repo_path, template)
-            template_definition = PipelineDefinition(template_abs_path)
-            tmpl_content = template_definition.annotate_yaml(self.debug,
-                                              local_agent.get_agent_name(),
-                                              local_agent.get_agent_pool_name())
-            tmpl_res = azure_repos_client.update_remote_file(ref_name, new_obj_id,
-                                                  template, tmpl_content)
-            new_obj_id = tmpl_res["refUpdates"][0]["newObjectId"]
-
+        ref_name = self.update_remote_template(self.debug,
+                                    local_agent.get_agent_name(),
+                                    local_agent.get_agent_pool_name())
         self.write_console_output("Updated yaml in temporary remote branch")
 
         # Run the pipeline
@@ -147,34 +118,3 @@ class RunCommand(Command):
             except Exception as e:
                 self.write_console_output(str(e))
                 self.write_console_output("\n")
-
-    def _recreate_temp_branch(self):
-        local_git_repo = LocalGitRepository(self.repo_path)
-        git_username = local_git_repo.get_git_username()
-        git_username_hash = self._generate_unique_int(git_username)
-        temp_branch_name = f"tmp-{self.pipeline_id}-{git_username_hash}"
-
-        # Delete the temp branch if it already exists
-        azure_repos_client = AzureReposClient(self.org_url, self.project_name,
-                                              self.personal_access_token)
-        existing_remote_ref = azure_repos_client.get_remote_branch(temp_branch_name)
-        if len(existing_remote_ref["value"]) > 0:
-            azure_repos_client.delete_branch(temp_branch_name,
-                                             existing_remote_ref["value"][0]["objectId"])
-
-        # Get the remote tracking branch for the currently active branch
-        active_branch_name = local_git_repo.get_active_branch_name()
-        remote_tracking_ref = azure_repos_client.get_remote_branch(active_branch_name)
-        if len(remote_tracking_ref["value"]) == 0:
-            raise Exception("Unable to find the remote tracking branch for the active branch. Please publish the branch")
-        object_id = remote_tracking_ref["value"][0]["objectId"]
-
-        # Create the new temp branch
-        temp_branch_ref = azure_repos_client.create_branch(temp_branch_name,
-                                                           object_id)
-        return (temp_branch_ref["value"][0]["name"],
-                temp_branch_ref["value"][0]["newObjectId"])
-
-    def _generate_unique_int(self, text):
-        number = sum(ord(c) for c in text)
-        return number
